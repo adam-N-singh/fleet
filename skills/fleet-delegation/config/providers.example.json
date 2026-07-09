@@ -1,0 +1,131 @@
+{
+  "_comment": "Fleet provider registry. Copy to ./.fleet/providers.json (project) or ~/.fleet/providers.json (user) and edit to match what YOU actually have access to. Run /fleet-init to have Claude draft this for you with current models and pricing. Fields: enabled, adapter (codex|gemini|opencode), access (subscription|api|local|free), default_model (REQUIRED for opencode, provider/model form; empty elsewhere = CLI default), max_workers, cost, strengths/weaknesses (short, honest, yours \u2014 these steer routing), context_window, trust (standard|restricted), notes. Optional per-provider: soft_weekly_cap {tasks and/or tokens} for quota pacing, review_after (ISO date) for scheduled access-term changes.",
+  "providers": {
+    "codex": {
+      "enabled": true,
+      "adapter": "codex",
+      "access": "subscription",
+      "default_model": "",
+      "max_workers": 2,
+      "cost": {
+        "mode": "flat",
+        "notes": "ChatGPT plan \u2014 flat-rate marginal cost until usage limits hit"
+      },
+      "strengths": [
+        "long agentic implementation runs",
+        "strong general coding",
+        "reliable tool use"
+      ],
+      "weaknesses": [
+        "subscription quota is opaque \u2014 limits appear without warning"
+      ],
+      "context_window": 400000,
+      "trust": "standard",
+      "notes": "First-party OpenAI harness. Resume supported. soft_weekly_cap is a self-imposed pacing proxy for the plan's invisible usage limits \u2014 tune it to your plan; the fleet deprioritizes (not blocks) this provider as delegated usage approaches it.",
+      "soft_weekly_cap": {
+        "tasks": 40
+      }
+    },
+    "gemini": {
+      "enabled": true,
+      "adapter": "gemini",
+      "access": "free",
+      "default_model": "",
+      "max_workers": 2,
+      "cost": {
+        "mode": "flat",
+        "notes": "Free tier with Google login: ~60 req/min, ~1000/day. API key mode is per-token."
+      },
+      "strengths": [
+        "huge context window",
+        "fast",
+        "generous free tier for bulk mechanical work"
+      ],
+      "weaknesses": [
+        "no headless session resume \u2014 follow-ups need fresh briefs",
+        "quality drops when free tier silently falls back to flash"
+      ],
+      "context_window": 1000000,
+      "trust": "standard",
+      "notes": "First-party Google harness. Headless returns one JSON object at the end, so no live progress events."
+    },
+    "deepseek": {
+      "enabled": false,
+      "adapter": "opencode",
+      "access": "api",
+      "default_model": "deepseek/deepseek-chat",
+      "max_workers": 2,
+      "cost": {
+        "mode": "per_token",
+        "input_per_mtok": 0.27,
+        "output_per_mtok": 1.1,
+        "currency": "USD",
+        "notes": "VERIFY current pricing before enabling \u2014 this is an example placeholder"
+      },
+      "strengths": [
+        "very cheap per token",
+        "solid code generation"
+      ],
+      "weaknesses": [
+        "weaker multi-step agentic reliability than frontier harnesses"
+      ],
+      "context_window": 128000,
+      "trust": "standard",
+      "notes": "Runs through OpenCode. Requires: opencode auth login (deepseek API key)."
+    },
+    "local-lmstudio": {
+      "enabled": false,
+      "adapter": "opencode",
+      "access": "local",
+      "default_model": "lmstudio/qwen2.5-coder-32b",
+      "max_workers": 1,
+      "cost": {
+        "mode": "free",
+        "notes": "Local inference \u2014 free but occupies the machine"
+      },
+      "strengths": [
+        "zero marginal cost",
+        "private \u2014 code never leaves the machine"
+      ],
+      "weaknesses": [
+        "local models fail verification more on multi-step agentic work",
+        "slow on consumer hardware",
+        "requires LM Studio server running"
+      ],
+      "context_window": 32000,
+      "trust": "restricted",
+      "notes": "LM Studio via its OpenAI-compatible endpoint, configured as a provider in opencode.json. Set default_model to the exact provider/model name from `opencode models`. restricted trust: only dispatch small, low-blast-radius tasks."
+    },
+    "claude-worker": {
+      "enabled": false,
+      "adapter": "claude",
+      "access": "subscription",
+      "default_model": "haiku",
+      "max_workers": 2,
+      "cost": {
+        "mode": "flat",
+        "notes": "Claude plan \u2014 flat-rate. API-key auth is per_token; claude reports total_cost_usd per run either way."
+      },
+      "strengths": [
+        "strong agentic reliability",
+        "cheap mechanical work on haiku"
+      ],
+      "weaknesses": [
+        "if the supervisor is Claude Code on the same account, this spends the same quota \u2014 parallelism only, not a cost play"
+      ],
+      "context_window": 200000,
+      "trust": "standard",
+      "notes": "Claude Code headless (claude -p). Main uses: non-Claude supervisors (e.g. Codex running fleet) dispatching Claude workers, or a Claude supervisor dispatching haiku for cheap tasks. Resume supported (directory-scoped). review_after: set this to any date a provider's access terms are scheduled to change (e.g. a frontier model moving from subscription tiers to usage credits) \u2014 registry.py list flags REVIEW_DUE once it passes, reminding you to re-verify access/cost and update caps.",
+      "review_after": "2026-07-12"
+    }
+  },
+  "routing": {
+    "prefer_order": [
+      "local-lmstudio",
+      "gemini",
+      "codex",
+      "deepseek"
+    ],
+    "_comment": "Cheapest-first cascade the supervisor consults AFTER capability filtering. Order reflects cost: local free -> subscription/free flat -> API per-token. Reorder to taste; the ledger's track record can override this for specific task types."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "fleet-marketplace",
+  "owner": { "name": "Adam" },
+  "plugins": [
+    {
+      "name": "fleet",
+      "source": "./",
+      "description": "Supervise a multi-provider fleet of AI coding workers from Claude Code: registry-driven routing (capability, cost, track record), parallel dispatch, per-provider cooldowns with cascade fallback, verification-gated acceptance, outcome ledger. NOTE: runs unattended agents (file edits + command execution, no approval prompts) in your repo — read the README warning first; use only in repos you trust."
+    }
+  ]
+}
