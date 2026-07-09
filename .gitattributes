@@ -1,2 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Bash and Python scripts must check out with LF even on Windows
+# (autocrlf=true would give them CRLF, which breaks them under Git Bash)
+*.sh text eol=lf
+*.py text eol=lf

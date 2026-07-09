@@ -86,10 +86,52 @@ dispatchable worker. Claude Code additionally gets a plugin wrapper with
 
 ## Install
 
+### Easiest: one command
+
+No checkout needed — the installer fetches the repo itself, detects which
+agents you have installed (Claude Code, Codex, Gemini CLI, Antigravity), and
+installs for each. For Claude Code it installs the full plugin, slash commands
+included.
+
+macOS / Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/adam-N-singh/fleet/main/install.sh | bash
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/adam-N-singh/fleet/main/install.ps1 | iex
+```
+
+### Or: paste one prompt into your AI agent
+
+Works in Claude Code, Codex, Gemini CLI, Cursor, or any coding agent — copy
+the whole block:
+
+```text
+Install the "fleet" skill from https://github.com/adam-N-singh/fleet for me.
+Before installing, fetch the repo's README, show me its "Read this before
+installing" warning, and get my explicit go-ahead. Then:
+- If you are Claude Code, run: claude plugin marketplace add adam-N-singh/fleet
+  and then: claude plugin install fleet@fleet-marketplace
+- Otherwise, clone the repo and run its installer for the agent you are
+  (macOS/Linux: bash install.sh codex|gemini|antigravity; Windows PowerShell:
+  .\install.ps1 <same targets>). If you are a different Agent Skills-compatible
+  agent, run the installer with --dir <your skills directory> instead.
+Verify the installed skill's SKILL.md exists. Then read the skill's
+references/providers-guide.md and interview me to create my provider registry
+at ~/.fleet/providers.json, and validate it by running:
+python scripts/registry.py validate (from the installed skill directory).
+```
+
+### Manual install
+
 **Claude Code (richest experience — adds the slash commands):**
 
 ```
-/plugin marketplace add <your-username>/fleet
+/plugin marketplace add adam-N-singh/fleet
 /plugin install fleet@fleet-marketplace
 ```
 
@@ -98,7 +140,8 @@ fully functional; supervisors without the commands are simply *asked* ("set up
 my fleet registry", "dispatch the test suite to gemini", "check on the fleet"):
 
 ```bash
-git clone <this-repo> && cd fleet
+git clone https://github.com/adam-N-singh/fleet.git && cd fleet
+./install.sh                # -> auto-detect installed agents, install for each
 ./install.sh codex          # -> ~/.codex/skills/fleet-delegation
 ./install.sh gemini         # -> ~/.gemini/skills/fleet-delegation
 ./install.sh antigravity    # -> ~/.gemini/antigravity/skills/fleet-delegation
@@ -216,7 +259,9 @@ fleet/
         └── adapters/{codex.sh, gemini.sh, opencode.sh, claude.sh}
 ```
 
-Plus `install.sh` at the repo root for non-Claude-Code agents. The
+Plus `install.sh` / `install.ps1` at the repo root — self-bootstrapping
+installers (they fetch the repo when piped from the web) with agent
+auto-detection. The
 `.claude-plugin/` and `commands/` directories are the Claude Code wrapper;
 everything under `skills/` is the portable core.
 
