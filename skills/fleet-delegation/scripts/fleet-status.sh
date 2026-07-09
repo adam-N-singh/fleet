@@ -22,6 +22,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Windows-friendly python resolution: Git Bash usually has `python`, not `python3`.
+PY="${FLEET_PYTHON:-}"
+if [[ -z "$PY" ]]; then
+  if command -v ${PY} >/dev/null 2>&1; then PY="python3"; else PY="python"; fi
+fi
 RUNS_DIR="${FLEET_RUNS_DIR:-.fleet-runs}"
 COOLDOWN_SECONDS="${FLEET_COOLDOWN_SECONDS:-900}"
 POLL_INTERVAL="${FLEET_POLL_INTERVAL:-20}"
@@ -33,12 +38,12 @@ fi
 RUNS_DIR="$(cd "$RUNS_DIR" && pwd)"
 
 meta() {  # meta <task_dir> <key>
-  python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get(sys.argv[2],''))" \
+  ${PY} -c "import json,sys;print(json.load(open(sys.argv[1])).get(sys.argv[2],''))" \
     "$1/meta.json" "$2" 2>/dev/null || true
 }
 
 pe() {  # pe <events_file> <field> <format>
-  python3 "$SCRIPT_DIR/parse_events.py" "$1" "$2" --format "$3" 2>/dev/null || true
+  ${PY} "$SCRIPT_DIR/parse_events.py" "$1" "$2" --format "$3" 2>/dev/null || true
 }
 
 report_task() {
@@ -102,7 +107,7 @@ report_task() {
     echo "FINAL_MESSAGE:"
     pe "$events" final "$fmt"
     echo "NEXT: review git diff, run the brief's acceptance commands, then record the outcome:"
-    echo "  python3 $SCRIPT_DIR/ledger.py append --provider $provider --model '$model' --task-type <type> --outcome <accepted|remediated|absorbed|failed> --task-id $task_id"
+    echo "  ${PY} $SCRIPT_DIR/ledger.py append --provider $provider --model '$model' --task-type <type> --outcome <accepted|remediated|absorbed|failed> --task-id $task_id"
     return 0
   fi
 

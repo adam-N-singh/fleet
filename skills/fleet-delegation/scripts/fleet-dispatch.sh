@@ -24,6 +24,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Windows-friendly python resolution: Git Bash usually has `python`, not `python3`.
+PY="${FLEET_PYTHON:-}"
+if [[ -z "$PY" ]]; then
+  if command -v ${PY} >/dev/null 2>&1; then PY="python3"; else PY="python"; fi
+fi
 RUNS_DIR="${FLEET_RUNS_DIR:-.fleet-runs}"
 MAX_TOTAL="${FLEET_MAX_WORKERS_TOTAL:-4}"
 
@@ -42,11 +47,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-REG="python3 $SCRIPT_DIR/registry.py"
+REG="${PY} $SCRIPT_DIR/registry.py"
 
 # ---------- preflight --------------------------------------------------------
 
-[[ -n "$PROVIDER" ]] || { echo "ERROR: --provider <name> is required (see: python3 $SCRIPT_DIR/registry.py list)" >&2; exit 2; }
+[[ -n "$PROVIDER" ]] || { echo "ERROR: --provider <name> is required (see: ${PY} $SCRIPT_DIR/registry.py list)" >&2; exit 2; }
 if [[ -z "$BRIEF" || ! -s "$BRIEF" ]]; then
   echo "ERROR: --brief <file> is required and must be a non-empty file" >&2; exit 2
 fi
@@ -108,7 +113,7 @@ for d in "$RUNS_DIR"/*/; do
   WPID="$(cat "$d/pid" 2>/dev/null || true)"
   if [[ -n "$WPID" ]] && kill -0 "$WPID" 2>/dev/null; then
     LIVE_TOTAL=$(( LIVE_TOTAL + 1 ))
-    TP="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get('provider',''))" "$d/meta.json" 2>/dev/null || true)"
+    TP="$(${PY} -c "import json,sys;print(json.load(open(sys.argv[1])).get('provider',''))" "$d/meta.json" 2>/dev/null || true)"
     [[ "$TP" == "$PROVIDER" ]] && LIVE_PROVIDER=$(( LIVE_PROVIDER + 1 ))
   fi
 done
@@ -132,7 +137,7 @@ CMD=()
 CMD_STDIN="yes"
 adapter_build_cmd "$MODEL" "$EFFORT" "$WORKDIR" "$RESUME" "$TASK_DIR/brief.md"
 
-python3 - "$TASK_DIR/meta.json" "$TASK_ID" "$PROVIDER" "$ADAPTER" "$MODEL" "$ADAPTER_EVENT_FORMAT" <<'PYEOF'
+${PY} - "$TASK_DIR/meta.json" "$TASK_ID" "$PROVIDER" "$ADAPTER" "$MODEL" "$ADAPTER_EVENT_FORMAT" <<'PYEOF'
 import json, sys, time
 _, path, task_id, provider, adapter, model, fmt = sys.argv
 json.dump({"task_id": task_id, "provider": provider, "adapter": adapter,
@@ -165,7 +170,7 @@ SESSION=""
 for _ in $(seq 1 20); do
   [[ -f "$TASK_DIR/exit-code" ]] && break
   if [[ -s "$TASK_DIR/events.jsonl" ]]; then
-    SESSION="$(python3 "$SCRIPT_DIR/parse_events.py" "$TASK_DIR/events.jsonl" session --format "$ADAPTER_EVENT_FORMAT" 2>/dev/null || true)"
+    SESSION="$(${PY} "$SCRIPT_DIR/parse_events.py" "$TASK_DIR/events.jsonl" session --format "$ADAPTER_EVENT_FORMAT" 2>/dev/null || true)"
     [[ -n "$SESSION" ]] && break
   fi
   sleep 0.5

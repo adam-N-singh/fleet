@@ -19,7 +19,9 @@ your own quota — the cost advantage of the fleet comes from the *other*
 providers, so weight your routing accordingly.
 
 All scripts live in this skill's `scripts/` directory; resolve them relative to
-this SKILL.md file. `<scripts>` below means that directory.
+this SKILL.md file. `<scripts>` below means that directory. On Windows, run
+them through Git Bash; if `python3` isn't on PATH, substitute `python` in the
+commands below (the shell scripts already fall back on their own).
 
 ## Session start (once)
 

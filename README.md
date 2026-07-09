@@ -106,6 +106,16 @@ git clone <this-repo> && cd fleet
 ./install.sh <target> --project   # project-level instead of user-level
 ```
 
+**Windows:** PowerShell doesn't execute `.sh` files (it opens them in your
+editor). Either run the bash installer through Git Bash — `bash ./install.sh
+codex` — or use the native PowerShell installer: `.\install.ps1 codex`
+(same targets, `-Dir <path>`, `-Project`). Claude Code users can skip
+installers entirely: `/plugin marketplace add <path-or-repo>` works with a
+local folder path. Runtime requirements on Windows: Git for Windows (the
+skill's scripts run under Git Bash at dispatch time) and Python on PATH —
+plain `python` is fine, the scripts fall back automatically when `python3`
+doesn't exist (override with `FLEET_PYTHON`).
+
 Skill directory locations vary by agent version — if the agent doesn't
 discover it, check that agent's skills docs and rerun with `--dir`. Then have
 the supervisor create your provider registry (Claude Code: `/fleet-init`;
