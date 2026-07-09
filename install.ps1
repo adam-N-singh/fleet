@@ -1,4 +1,4 @@
-# install.ps1 — install the fleet-delegation skill on Windows (PowerShell).
+﻿# install.ps1 — install the fleet-delegation skill on Windows (PowerShell).
 #
 # Usage:
 #   .\install.ps1 claude          -> $HOME\.claude\skills\fleet-delegation
