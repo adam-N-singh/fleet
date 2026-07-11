@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 """Parse worker output into uniform fields, across adapter formats.
 
-Usage: parse_events.py <output-file> <field> --format codex|opencode|gemini|claude
+Usage: parse_events.py <output-file> <field> --format <fmt>
+
+Formats: codex | opencode | gemini | claude | antigravity | ndjson | grok | text
+  claude    one Claude-shaped result object (claude -p, droid exec)
+  ndjson    Claude-style NDJSON event stream (cursor-agent, qwen)
+  grok      one JSON object, unpublished schema — generic recursive key search
+  text      plain text response, no structure (copilot, amp; antigravity is
+            its alias from before this generalization)
 
 Fields:
   session     worker session id (empty if the format has none)
@@ -16,6 +23,7 @@ lines are skipped, multiple key spellings are accepted, and unknown event
 shapes degrade to empty output (exit 1) rather than crashing.
 """
 import json
+import re
 import sys
 
 
@@ -54,6 +62,20 @@ def load_object(path):
         except json.JSONDecodeError:
             continue
     return None
+
+
+ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)")
+
+
+def load_text(path):
+    """Antigravity (agy -p): one plain-text response, no structured output
+    flag on current versions. Strip ANSI escapes and carriage returns."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            buf = f.read()
+    except OSError:
+        return None
+    return ANSI_RE.sub("", buf).replace("\r", "").strip() or None
 
 
 def find_key(obj, names, _depth=0):
@@ -160,6 +182,93 @@ def gemini(obj, field):
     return None
 
 
+def antigravity(text, field):
+    """agy -p emits plain text only: no session id, no usage, no events.
+    Errors go to stderr with a non-zero exit (agy >= 1.1.1), so the status
+    script classifies failures from stderr, not from this output."""
+    if field == "session":
+        return None  # headless runs never surface their conversation id
+    if field == "final":
+        return text or None
+    if field == "usage":
+        return None
+    if field == "errors":
+        return None
+    if field == "completed":
+        return "yes" if text else "no"
+    if field == "last_event":
+        return "response" if text else None
+    return None
+
+
+def ndjson_stream(events, field):
+    """Claude-style NDJSON event stream (cursor-agent --output-format
+    stream-json, qwen --output-format stream-json): events carry a type and
+    session_id; the run ends with a {"type":"result", ...} object."""
+    results = [e for e in events if e.get("type") == "result"]
+    final_obj = results[-1] if results else None
+    if field == "session":
+        for e in events:
+            sid = find_key(e, SESSION_KEYS)
+            if sid:
+                return str(sid)
+    if field == "final":
+        if final_obj and final_obj.get("result"):
+            return final_obj["result"]
+        texts = []
+        for e in events:
+            if e.get("type") == "assistant":
+                t = find_key(e, {"text", "content"})
+                if isinstance(t, str) and t:
+                    texts.append(t)
+        return "\n".join(texts) if texts else None
+    if field == "usage":
+        usage = find_key(final_obj, {"usage", "stats", "modelUsage"}) if final_obj else None
+        if usage is None:
+            for e in reversed(events):
+                usage = find_key(e, {"usage", "stats", "modelUsage"})
+                if usage:
+                    break
+        return json.dumps(usage) if usage else None
+    if field == "errors":
+        errs = [json.dumps(e) for e in events
+                if e.get("type") == "error" or e.get("is_error")
+                or (e.get("type") == "result" and e.get("subtype") not in (None, "success"))]
+        return "\n".join(errs) if errs else None
+    if field == "completed":
+        if final_obj:
+            return "yes" if not final_obj.get("is_error") and final_obj.get("subtype") in (None, "success") else "no"
+        return "no"
+    if field == "last_event":
+        return events[-1].get("type", "unknown") if events else None
+    return None
+
+
+def generic_object(obj, field):
+    """One JSON object with an unpublished schema (grok --output-format json):
+    recursive key search over common spellings. Verify per CLI version."""
+    if obj is None:
+        return None
+    err = find_key(obj, {"error", "errors"})
+    if field == "session":
+        sid = find_key(obj, SESSION_KEYS)
+        return str(sid) if sid else None
+    if field == "final":
+        val = find_key(obj, {"result", "response", "final", "text", "content", "message"})
+        return val if isinstance(val, str) and val else None
+    if field == "usage":
+        usage = find_key(obj, {"usage", "stats", "tokens", "token_usage"})
+        return json.dumps(usage) if usage else None
+    if field == "errors":
+        return json.dumps(err) if err else None
+    if field == "completed":
+        val = find_key(obj, {"result", "response", "final", "text", "content", "message"})
+        return "yes" if (isinstance(val, str) and val and not err) else "no"
+    if field == "last_event":
+        return "response"
+    return None
+
+
 def claude(obj, field):
     """claude -p --output-format json: one result object
     {type:"result", subtype:"success", result, session_id, total_cost_usd, usage}."""
@@ -194,13 +303,17 @@ def main():
 
     if fmt == "gemini":
         result = gemini(load_object(path), field)
+    elif fmt in ("antigravity", "text"):
+        result = antigravity(load_text(path), field)
     elif fmt == "claude":
         result = claude(load_object(path), field)
-    elif fmt in ("codex", "opencode"):
+    elif fmt == "grok":
+        result = generic_object(load_object(path), field)
+    elif fmt in ("codex", "opencode", "ndjson"):
         events = load_jsonl(path)
         if events is None:
             return 1
-        result = codex(events, field) if fmt == "codex" else opencode(events, field)
+        result = {"codex": codex, "opencode": opencode, "ndjson": ndjson_stream}[fmt](events, field)
     else:
         print(f"unknown format: {fmt}", file=sys.stderr)
         return 2

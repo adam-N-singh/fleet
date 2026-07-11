@@ -1,6 +1,6 @@
 ---
 name: fleet-delegation
-description: Supervise a fleet of AI coding workers from multiple providers (OpenAI Codex, Google Gemini CLI, Claude Code headless, and any of 75+ providers via OpenCode — including DeepSeek, Qwen, Kimi, GLM, and local models on LM Studio or Ollama) as background subagents. Decide which coding tasks to delegate, select the best provider and model for each using the provider registry, cost cascade, and outcome ledger, dispatch workers in parallel while continuing other work, monitor progress, verify results before accepting them, and cascade to the next provider or fall back to doing the work yourself when a provider is rate-limited or unavailable. Works from any Agent Skills-compatible supervisor (Claude Code, Codex CLI, Gemini CLI, Cursor, and others). Use this proactively during any multi-task build whenever an independent, well-specified implementation task could run in parallel with your own work — not only when the user says "delegate", "Codex", "Gemini", "Claude", "DeepSeek", or names a model. Also use whenever the user mentions dispatching work to other models, background coding workers, multi-model orchestration, or running tasks on a cheaper model.
+description: Supervise a fleet of AI coding workers from multiple providers (OpenAI Codex, Google Antigravity CLI — Gemini CLI's successor — xAI Grok Build, Cursor CLI, GitHub Copilot CLI, Qwen Code, Factory Droid, Amp, Claude Code headless, and any of 75+ providers via OpenCode — including DeepSeek, Kimi, GLM, and local models on LM Studio or Ollama) as background subagents. Decide which coding tasks to delegate, select the best provider and model for each using the provider registry, cost cascade, and outcome ledger, dispatch workers in parallel while continuing other work, monitor progress, verify results before accepting them, and cascade to the next provider or fall back to doing the work yourself when a provider is rate-limited or unavailable. Works from any Agent Skills-compatible supervisor (Claude Code, Codex CLI, Gemini CLI, Cursor, and others). Use this proactively during any multi-task build whenever an independent, well-specified implementation task could run in parallel with your own work — not only when the user says "delegate", "Codex", "Antigravity", "Grok", "Cursor", "Copilot", "Claude", "DeepSeek", or names a model. Also use whenever the user mentions dispatching work to other models, background coding workers, multi-model orchestration, or running tasks on a cheaper model.
 ---
 
 # Fleet Delegation
@@ -29,8 +29,10 @@ commands below (the shell scripts already fall back on their own).
    This is your knowledge of the fleet — which providers the user has enabled,
    their access mode and cost, their strengths/weaknesses as *the user* recorded
    them, concurrency caps, and the routing preference order. If it errors with
-   no registry found, tell the user to run `/fleet-init` and do all work
-   yourself until then. Never dispatch to a provider that isn't enabled.
+   no registry found, offer to set the registry up (Claude Code: `/fleet-init`;
+   any other supervisor: follow `references/providers-guide.md` and draft it
+   interactively) and do all work yourself until then. Never dispatch to a
+   provider that isn't enabled.
 2. Read the track record: `python3 <scripts>/ledger.py summary`
    Observed outcomes per provider/model/task-type. This outranks both the
    registry's strengths notes and your own priors, because it reflects what
@@ -38,7 +40,8 @@ commands below (the shell scripts already fall back on their own).
    Also check pacing: `python3 <scripts>/ledger.py usage` — delegated volume
    per provider against any `soft_weekly_cap` in the registry. If the registry
    flags a provider REVIEW_DUE, tell the user its access terms may have
-   changed and suggest a /fleet-init refresh for it.
+   changed and suggest refreshing that entry (Claude Code: `/fleet-init`;
+   other supervisors: re-verify access/pricing and update the registry).
 3. Confirm `.fleet-runs/` is in `.gitignore`; add it on first dispatch.
 
 ## Step 1 — Should this task be delegated at all?
@@ -99,7 +102,7 @@ Apply these filters **in order**:
    A cheap provider with a strong record beats a pricier default.
 
 State your routing choice in one line to the user when you dispatch ("sending
-the test suite to gemini: free tier, large context, 5/5 on test tasks").
+the test suite to antigravity: free tier, large context, 5/5 on test tasks").
 If the user named a provider, use it. Model override: pass `--model` only when
 the user asked or the registry notes call for it; otherwise the provider's
 default model applies. Never invent model names.
@@ -147,13 +150,15 @@ scope changed), run the brief's acceptance commands, and run the
 
 If verification fails:
 - **Small fix:** do it yourself — faster than a round trip.
-- **Substantive rework, provider supports resume** (codex, opencode, claude): write a
+- **Substantive rework, provider supports resume** (codex, opencode, claude,
+  grok, cursor, qwen, droid): write a
   short follow-up brief stating exactly what's wrong, then
   `--resume <SESSION_ID>`. Max 2 rounds, then take over. Keep follow-up briefs
   additive — state what to change without restating or rewriting the original
   brief, so the worker-side prompt cache of the session prefix stays warm
   (cache hits are the cheapest tokens there are).
-- **Substantive rework, no resume** (gemini): dispatch a fresh brief that
+- **Substantive rework, no resume** (antigravity, gemini, copilot, amp):
+  dispatch a fresh brief that
   includes a summary of the prior round's diff and what to change.
 
 ## Step 6 — Record the outcome (mandatory, every task)
@@ -169,8 +174,13 @@ python3 <scripts>/ledger.py append --provider <p> --model "<m>" \
 ```
 
 Pull cost/tokens from the status output's USAGE line when present (opencode
-and claude report cost directly; codex and gemini report tokens — compute cost
+and claude report cost directly; codex, gemini, cursor, qwen, and grok report
+tokens — compute cost
 from the registry's per-token prices for API providers; omit for flat-rate).
+Plain-text providers (antigravity, copilot, amp) and droid report no usage at
+all — ledger the outcome without cost/tokens, or add `--wall-seconds` only;
+for usage-billed ones (amp, droid) check the provider dashboard when true-cost
+accounting matters.
 
 **True-cost accounting:** log `--cost-usd` for `absorbed` and `failed`
 outcomes too — the invoice doesn't refund a misroute, so wasted spend must
@@ -188,7 +198,10 @@ intelligence.
   provider refuses dispatch until it expires. Re-route the brief down the
   cascade. Mention the fallback to the user in one line.
 - **AUTH_ERROR** — tell the user which CLI to re-authenticate (`codex login`, `claude /login`,
-  `gemini` auth flow, `opencode auth login`). Re-route meanwhile.
+  `agy` Google login or `GEMINI_API_KEY`/`ANTIGRAVITY_API_KEY`, `grok login`,
+  `cursor-agent login` / `CURSOR_API_KEY`, `copilot` login / `GH_TOKEN`,
+  qwen API key, `FACTORY_API_KEY`, `amp login` / `AMP_API_KEY`,
+  `opencode auth login`). Re-route meanwhile.
 - **FAILED** — read ERRORS and stderr. Ambiguous brief → one retry with a
   corrected brief, same provider. Anything else → next provider or absorb.
   Never retry more than once per provider.

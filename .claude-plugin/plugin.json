@@ -1,7 +1,7 @@
 {
   "name": "fleet",
-  "version": "0.3.2",
-  "description": "Claude Code supervises a multi-provider fleet of AI coding workers (OpenAI Codex, Google Gemini CLI, Claude Code headless, and 75+ providers via OpenCode including DeepSeek, Qwen, and local LM Studio/Ollama models) as background subagents: registry-driven routing by capability, cost, and observed track record; parallel dispatch; per-provider rate-limit cooldowns with cascade fallback; verification-gated acceptance; and an outcome ledger that makes routing smarter with use. NOTE: runs unattended agents (file edits + command execution, no approval prompts) inside your repo \u2014 read the README warning before installing; use only in repos you trust. The skill itself follows the Agent Skills open standard and also runs under Codex CLI, Gemini CLI, Cursor, and other compatible supervisors (see install.sh).",
+  "version": "0.5.0",
+  "description": "Claude Code supervises a multi-provider fleet of AI coding workers (OpenAI Codex, Google Antigravity CLI — Gemini CLI's successor — xAI Grok Build, Cursor CLI, GitHub Copilot CLI, Qwen Code, Factory Droid, Amp, Claude Code headless, and 75+ providers via OpenCode including DeepSeek and local LM Studio/Ollama models) as background subagents: registry-driven routing by capability, cost, and observed track record; parallel dispatch; per-provider rate-limit cooldowns with cascade fallback; verification-gated acceptance; and an outcome ledger that makes routing smarter with use. NOTE: runs unattended agents (file edits + command execution, no approval prompts) inside your repo — read the README warning before installing; use only in repos you trust. The skill itself follows the Agent Skills open standard and also runs under Codex CLI, Gemini CLI, Cursor, and other compatible supervisors (see install.sh).",
   "author": {
     "name": "Adam"
   },
@@ -10,10 +10,17 @@
     "orchestration",
     "delegation",
     "codex",
+    "antigravity",
     "gemini",
     "opencode",
     "deepseek",
     "local-models",
-    "subagents"
+    "subagents",
+    "grok",
+    "cursor",
+    "copilot",
+    "qwen",
+    "droid",
+    "amp"
   ]
 }

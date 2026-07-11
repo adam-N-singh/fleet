@@ -12,7 +12,7 @@ Per-provider fields:
 | Field | Meaning |
 |---|---|
 | `enabled` | Only enabled providers are dispatchable. |
-| `adapter` | `codex`, `gemini`, or `opencode` — which launch mechanism to use. |
+| `adapter` | `codex`, `antigravity`, `gemini` (retired for non-enterprise accounts 2026-06-18), `opencode`, `claude`, `grok`, `cursor`, `copilot`, `qwen`, `droid`, or `amp` — which launch mechanism to use. |
 | `access` | `subscription`, `api`, `local`, or `free`. Informs the cost cascade. |
 | `default_model` | Model when `--model` isn't passed. **Required for opencode** (`provider/model` form, e.g. `deepseek/deepseek-chat`); empty elsewhere means the CLI's own default. |
 | `max_workers` | Per-provider concurrency cap (default 2). |
@@ -60,7 +60,8 @@ adapter_build_cmd() {  # MODEL EFFORT WORKDIR RESUME BRIEF_PATH
 Requirements for a well-behaved adapter: the launched command must run fully
 unattended (no interactive prompts), write parseable output to stdout, exit
 non-zero on failure, and never commit. If the new CLI's output format isn't
-`codex`/`opencode`/`gemini`-shaped, add a format function to
+shaped like an existing format (`codex`, `opencode`, `gemini`, `claude`,
+`ndjson`, `grok`, `text`), add a format function to
 `parse_events.py` implementing the six fields (`session`, `final`, `usage`,
 `last_event`, `errors`, `completed`) — tolerant parsing, empty-on-missing.
 

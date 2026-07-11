@@ -22,7 +22,8 @@ SEARCH = [
     os.path.expanduser("~/.fleet/providers.json"),
 ]
 
-KNOWN_ADAPTERS = {"codex", "gemini", "opencode", "claude"}
+KNOWN_ADAPTERS = {"codex", "antigravity", "gemini", "opencode", "claude",
+                  "grok", "cursor", "copilot", "qwen", "droid", "amp"}
 ACCESS_MODES = {"subscription", "api", "local", "free"}
 
 

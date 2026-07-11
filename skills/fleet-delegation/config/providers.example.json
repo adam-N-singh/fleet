@@ -1,5 +1,5 @@
 {
-  "_comment": "Fleet provider registry. Copy to ./.fleet/providers.json (project) or ~/.fleet/providers.json (user) and edit to match what YOU actually have access to. Run /fleet-init to have Claude draft this for you with current models and pricing. Fields: enabled, adapter (codex|gemini|opencode), access (subscription|api|local|free), default_model (REQUIRED for opencode, provider/model form; empty elsewhere = CLI default), max_workers, cost, strengths/weaknesses (short, honest, yours \u2014 these steer routing), context_window, trust (standard|restricted), notes. Optional per-provider: soft_weekly_cap {tasks and/or tokens} for quota pacing, review_after (ISO date) for scheduled access-term changes.",
+  "_comment": "Fleet provider registry. Copy to ./.fleet/providers.json (project) or ~/.fleet/providers.json (user) and edit to match what YOU actually have access to. Run /fleet-init to have Claude draft this for you with current models and pricing. Fields: enabled, adapter (codex|antigravity|gemini|opencode|claude|grok|cursor|copilot|qwen|droid|amp), access (subscription|api|local|free), default_model (REQUIRED for opencode, provider/model form; empty elsewhere = CLI default), max_workers, cost, strengths/weaknesses (short, honest, yours \u2014 these steer routing), context_window, trust (standard|restricted), notes. Optional per-provider: soft_weekly_cap {tasks and/or tokens} for quota pacing, review_after (ISO date) for scheduled access-term changes.",
   "providers": {
     "codex": {
       "enabled": true,
@@ -26,28 +26,54 @@
         "tasks": 40
       }
     },
-    "gemini": {
+    "antigravity": {
       "enabled": true,
-      "adapter": "gemini",
+      "adapter": "antigravity",
       "access": "free",
+      "default_model": "",
+      "max_workers": 1,
+      "cost": {
+        "mode": "flat",
+        "notes": "Free tier: ~20 requests/day \u2014 one agentic task can burn several. Paid Antigravity plans raise the cap."
+      },
+      "strengths": [
+        "huge context window",
+        "fast (Go binary)",
+        "free tier for occasional mechanical work"
+      ],
+      "weaknesses": [
+        "no headless session resume \u2014 follow-ups need fresh briefs",
+        "plain-text output only \u2014 no usage/token reporting",
+        "tight free-tier daily quota (~20 req/day)"
+      ],
+      "context_window": 1000000,
+      "trust": "standard",
+      "notes": "Google's Gemini CLI successor (agy >= 1.1.1 required). Headless prints one plain-text response at the end, so no live progress events. Model via --model or ~/.gemini/antigravity-cli/settings.json.",
+      "soft_weekly_cap": {
+        "tasks": 15
+      }
+    },
+    "gemini": {
+      "enabled": false,
+      "adapter": "gemini",
+      "access": "subscription",
       "default_model": "",
       "max_workers": 2,
       "cost": {
         "mode": "flat",
-        "notes": "Free tier with Google login: ~60 req/min, ~1000/day. API key mode is per-token."
+        "notes": "Enterprise Gemini Code Assist licenses only."
       },
       "strengths": [
         "huge context window",
-        "fast",
-        "generous free tier for bulk mechanical work"
+        "fast"
       ],
       "weaknesses": [
-        "no headless session resume \u2014 follow-ups need fresh briefs",
-        "quality drops when free tier silently falls back to flash"
+        "RETIRED for free/AI Pro/Ultra accounts \u2014 requests stopped serving 2026-06-18",
+        "no headless session resume \u2014 follow-ups need fresh briefs"
       ],
       "context_window": 1000000,
       "trust": "standard",
-      "notes": "First-party Google harness. Headless returns one JSON object at the end, so no live progress events."
+      "notes": "RETIRED 2026-06-18 for free-tier/AI Pro/Ultra accounts; replaced by the Antigravity CLI (see the antigravity entry). Enable this ONLY if you hold an enterprise Gemini Code Assist license, which retains access."
     },
     "deepseek": {
       "enabled": false,
@@ -96,6 +122,151 @@
       "trust": "restricted",
       "notes": "LM Studio via its OpenAI-compatible endpoint, configured as a provider in opencode.json. Set default_model to the exact provider/model name from `opencode models`. restricted trust: only dispatch small, low-blast-radius tasks."
     },
+    "grok": {
+      "enabled": false,
+      "adapter": "grok",
+      "access": "subscription",
+      "default_model": "",
+      "max_workers": 2,
+      "cost": {
+        "mode": "flat",
+        "notes": "SuperGrok ($30/mo) or X Premium+ ($40/mo) required for grok login; full Grok 4.5 access confirmed only on SuperGrok Heavy as of 2026-07 (lower tiers staged). API pricing if applicable: grok-4.5 $2/$6 per Mtok, grok-build-0.1 $1/$2 — VERIFY before enabling."
+      },
+      "strengths": [
+        "codex-like harness: effort control and session resume",
+        "500k context on grok-4.5",
+        "cheap dedicated coding model (grok-build-0.1) for mechanical work"
+      ],
+      "weaknesses": [
+        "early beta — JSON output schema unpublished, verify parsing on your version",
+        "subscription-gated auth"
+      ],
+      "context_window": 500000,
+      "trust": "standard",
+      "notes": "xAI Grok Build CLI (grok -p, --always-approve). Requires: grok login (SuperGrok / X Premium+; --device-auth for headless boxes). First run: verify session id and usage extraction — see the README's verify-before-trusting checklist."
+    },
+    "cursor": {
+      "enabled": false,
+      "adapter": "cursor",
+      "access": "subscription",
+      "default_model": "",
+      "max_workers": 2,
+      "cost": {
+        "mode": "flat",
+        "notes": "Cursor plan (Pro and up) or CURSOR_API_KEY usage billing — VERIFY your plan's agent quota before enabling."
+      },
+      "strengths": [
+        "mature agent harness with session resume",
+        "model choice via -m across frontier vendors"
+      ],
+      "weaknesses": [
+        "reported to fabricate answers to its own questions in headless mode instead of failing — briefs must be fully self-contained",
+        "agent quota on subscription plans is opaque"
+      ],
+      "context_window": 200000,
+      "trust": "standard",
+      "notes": "Cursor CLI (cursor-agent -p, --force). Auth: cursor-agent login, or CURSOR_API_KEY for headless. context_window depends on the selected model — adjust to your default."
+    },
+    "copilot": {
+      "enabled": false,
+      "adapter": "copilot",
+      "access": "subscription",
+      "default_model": "",
+      "max_workers": 2,
+      "cost": {
+        "mode": "flat",
+        "notes": "GitHub Copilot subscription; premium-request multipliers vary by model — VERIFY your plan's premium request budget."
+      },
+      "strengths": [
+        "included with a subscription many developers already have",
+        "model choice via --model (GPT and Claude families)"
+      ],
+      "weaknesses": [
+        "plain-text output only — no usage/token reporting",
+        "no programmatic session resume — follow-ups need fresh briefs"
+      ],
+      "context_window": 128000,
+      "trust": "standard",
+      "notes": "GitHub Copilot CLI (copilot -p, --allow-all-tools --no-ask-user). Auth: copilot login or COPILOT_GITHUB_TOKEN / GH_TOKEN / GITHUB_TOKEN. GitHub recommends containers for --allow-all-tools; the fleet's git-repo-only + diff-review discipline is the mitigation."
+    },
+    "qwen": {
+      "enabled": false,
+      "adapter": "qwen",
+      "access": "api",
+      "default_model": "qwen3-coder-plus",
+      "max_workers": 2,
+      "cost": {
+        "mode": "per_token",
+        "input_per_mtok": 0,
+        "output_per_mtok": 0,
+        "currency": "USD",
+        "notes": "PLACEHOLDER — the old Qwen OAuth free tier (~2000 req/day) was discontinued; VERIFY current access (API key or Qwen Coding Plan) and pricing before enabling."
+      },
+      "strengths": [
+        "structured output with session resume",
+        "hard safety caps built in (--max-wall-time, --max-session-turns)",
+        "strong price/performance on coding tasks"
+      ],
+      "weaknesses": [
+        "weaker multi-step agentic reliability than frontier harnesses",
+        "no sandbox in yolo mode"
+      ],
+      "context_window": 256000,
+      "trust": "standard",
+      "notes": "Qwen Code CLI (qwen -p, --approval-mode yolo, brief on stdin). Gemini CLI fork with Claude-style stream-json output. Distinct exit codes: 53 = turn limit, 55 = wall-time/tool budget."
+    },
+    "droid": {
+      "enabled": false,
+      "adapter": "droid",
+      "access": "api",
+      "default_model": "",
+      "max_workers": 2,
+      "cost": {
+        "mode": "per_token",
+        "input_per_mtok": 0,
+        "output_per_mtok": 0,
+        "currency": "USD",
+        "notes": "PLACEHOLDER — Factory bills by usage and the JSON result reports no token fields; VERIFY billing on your Factory plan before enabling."
+      },
+      "strengths": [
+        "brief passes as a file (-f) — no argv or stdin juggling",
+        "graded autonomy levels (--auto low|medium|high)",
+        "session resume and fork; reasoning-effort control"
+      ],
+      "weaknesses": [
+        "no token usage in JSON output — ledger cost tracking is manual",
+        "--auto medium permits git commits; the brief's do-not-commit instruction is the only guard"
+      ],
+      "context_window": 200000,
+      "trust": "standard",
+      "notes": "Factory Droid CLI (droid exec -f, --output-format json, --auto medium via FLEET_DROID_AUTO). Auth: FACTORY_API_KEY. Never raise --auto to high for fleet work (deploy/push territory)."
+    },
+    "amp": {
+      "enabled": false,
+      "adapter": "amp",
+      "access": "api",
+      "default_model": "",
+      "max_workers": 2,
+      "cost": {
+        "mode": "per_token",
+        "input_per_mtok": 0,
+        "output_per_mtok": 0,
+        "currency": "USD",
+        "notes": "PLACEHOLDER — Amp bills usage-based credits and reports no tokens in execute mode; track spend on the ampcode.com dashboard. VERIFY before enabling."
+      },
+      "strengths": [
+        "no model wrangling — Amp routes models itself",
+        "threads sync to ampcode.com for post-hoc inspection"
+      ],
+      "weaknesses": [
+        "plain-text output — no usage/token reporting",
+        "no scriptable resume on current versions — follow-ups need fresh briefs",
+        "no model pinning"
+      ],
+      "context_window": 200000,
+      "trust": "standard",
+      "notes": "Amp CLI (amp -x, --dangerously-allow-all). Auth: amp login or AMP_API_KEY. Prefer Amp's settings.json command allowlist over --dangerously-allow-all where possible (set FLEET_AMP_ALLOW_ALL=0 after configuring it). npm: @ampcode/cli."
+    },
     "claude-worker": {
       "enabled": false,
       "adapter": "claude",
@@ -122,9 +293,15 @@
   "routing": {
     "prefer_order": [
       "local-lmstudio",
-      "gemini",
+      "antigravity",
       "codex",
-      "deepseek"
+      "grok",
+      "cursor",
+      "copilot",
+      "deepseek",
+      "qwen",
+      "droid",
+      "amp"
     ],
     "_comment": "Cheapest-first cascade the supervisor consults AFTER capability filtering. Order reflects cost: local free -> subscription/free flat -> API per-token. Reorder to taste; the ledger's track record can override this for specific task types."
   }

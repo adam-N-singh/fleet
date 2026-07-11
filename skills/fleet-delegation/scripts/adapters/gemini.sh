@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 # Fleet adapter: Google Gemini CLI (headless mode).
+#
+# RETIRED (2026-06-18): Google stopped serving Gemini CLI requests for
+# free-tier, AI Pro, and AI Ultra accounts and replaced it with the
+# Antigravity CLI — see adapters/antigravity.sh. This adapter still works
+# ONLY for enterprise Gemini Code Assist licenses, which retain access.
+# Everyone else: disable the gemini registry entry and enable antigravity.
+# https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/
+#
 # Notes:
 # - Headless mode triggers with -p; the brief is piped on stdin as context.
 # - --output-format json returns ONE JSON object {response, stats, error?}

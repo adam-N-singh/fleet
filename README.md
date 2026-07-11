@@ -4,9 +4,11 @@ An **agent-portable skill** (plus a Claude Code plugin wrapper) that turns your
 coding agent into the supervisor of a **multi-provider fleet** of AI coding
 workers. The supervisor stays the planner, architect, router, and reviewer;
 well-specified implementation work runs in the background on whichever worker
-is best suited and cheapest — OpenAI Codex, Google Gemini CLI, Claude Code
-headless, or any of 75+ providers via OpenCode, including DeepSeek, Qwen, Kimi,
-GLM, and local models served by LM Studio or Ollama.
+is best suited and cheapest — OpenAI Codex, Google Antigravity CLI (Gemini
+CLI's successor), xAI Grok Build, Cursor CLI, GitHub Copilot CLI, Qwen Code,
+Factory Droid, Amp, Claude Code headless, or any of 75+ providers via
+OpenCode, including DeepSeek, Kimi, GLM, and local models served by LM Studio
+or Ollama.
 
 The skill follows the [Agent Skills open standard](https://agentskills.io)
 (SKILL.md), so the **same skill folder works under Claude Code, Codex CLI,
@@ -20,8 +22,9 @@ dispatchable worker. Claude Code additionally gets a plugin wrapper with
 > This plugin runs **autonomous background agents in your repository — from
 > multiple providers, in parallel.** When Claude delegates a task, it launches
 > a worker CLI headlessly with auto-approved tool execution: Codex with
-> `--sandbox workspace-write`, Gemini with `--approval-mode yolo`, OpenCode
-> per your permissions config. Concretely, workers can **edit files and run
+> `--sandbox workspace-write`, Antigravity with
+> `--dangerously-skip-permissions`, Gemini with `--approval-mode yolo`,
+> OpenCode per your permissions config. Concretely, workers can **edit files and run
 > commands inside your project directory without asking you first**, while
 > Claude works on other things. With API-billed providers enabled, delegation
 > also **spends real money**.
@@ -79,7 +82,16 @@ dispatchable worker. Claude Code additionally gets a plugin wrapper with
   Cursor, OpenCode, and others; `git`, `bash`, `python3`
 - At least one worker CLI installed and authenticated:
   - **Codex CLI** (`codex login`) — OpenAI, subscription or API
-  - **Gemini CLI** (Google login for the free tier, or `GEMINI_API_KEY`)
+  - **Antigravity CLI** (`agy`, Google login or `GEMINI_API_KEY` /
+    `ANTIGRAVITY_API_KEY`) — Google's Gemini CLI successor
+  - **Gemini CLI** — ⚠️ retired 2026-06-18 for free/AI Pro/Ultra accounts;
+    only enterprise Gemini Code Assist licenses still work
+  - **Grok Build CLI** (`grok login`) — xAI, SuperGrok / X Premium+
+  - **Cursor CLI** (`cursor-agent login` or `CURSOR_API_KEY`) — Cursor plans
+  - **GitHub Copilot CLI** (`copilot` login or `GH_TOKEN`) — Copilot plans
+  - **Qwen Code** (API key or Qwen Coding Plan) — Alibaba Qwen models
+  - **Factory Droid** (`FACTORY_API_KEY`) — Factory platform, usage-billed
+  - **Amp** (`amp login` or `AMP_API_KEY`) — ampcode.com, usage-billed
   - **Claude Code** (`claude /login`) — as a worker, on any account/model
   - **OpenCode** (`opencode auth login` per provider) — everything else,
     including local models
@@ -189,18 +201,36 @@ Registry: `$FLEET_PROVIDERS` → `./.fleet/providers.json` →
 | `FLEET_MAX_WORKERS_TOTAL` | `4` | Global concurrency cap (per-provider caps live in the registry) |
 | `FLEET_COOLDOWN_SECONDS` | `900` | Per-provider cooldown after a rate limit |
 | `FLEET_CODEX_SANDBOX` | `workspace-write` | Codex sandbox mode |
+| `FLEET_ANTIGRAVITY_PRINT_TIMEOUT` | `45m` | Antigravity `--print-timeout` (agy's own default of 5m is too short for coding tasks) |
+| `FLEET_ANTIGRAVITY_SANDBOX` | (unset) | Set to `1` to pass `--sandbox` to Antigravity workers |
 | `FLEET_LEDGER` | `.fleet-runs/ledger.jsonl` | Outcome ledger path |
 | `FLEET_PROVIDERS` | (search order above) | Explicit registry path |
 
 ## Per-provider setup notes
 
 - **Codex:** works out of the box once `codex login` is done. Resume supported.
-- **Gemini:** headless mode returns one JSON object at the end (no live
-  progress events) and has **no resumable session** — follow-ups are fresh
-  briefs. YOLO approval mode may enable Gemini's own sandbox by default, which
-  wants Docker; if workers fail with sandbox errors, disable sandboxing in
-  Gemini's settings.json or install Docker. Free tier silently falls back
-  between models near quota.
+- **Antigravity:** requires `agy` **>= 1.1.1** (earlier versions hang on
+  stdin in subprocesses, and 1.0.0 silently dropped stdout under a non-TTY —
+  if a worker reports DONE with an empty FINAL_MESSAGE, check `agy --version`
+  first). Headless prints **one plain-text response** at the end — no JSON
+  output flag, no live progress events, no token/usage reporting — and has
+  **no resumable session** (headless runs never surface their conversation
+  id; `-c` resumes the most recent conversation *globally*, unsafe with
+  concurrent workers) — follow-ups are fresh briefs. Runs unattended via
+  `--dangerously-skip-permissions`; set `FLEET_ANTIGRAVITY_SANDBOX=1` to add
+  `--sandbox`, but note its terminal restrictions can block the brief's
+  acceptance commands. The free tier is ~20 requests/day and one agentic task
+  can burn several — keep `max_workers` at 1 and expect daily-quota rate
+  limits.
+- **Gemini:** ⚠️ **retired 2026-06-18** for free-tier/AI Pro/Ultra accounts —
+  Google stopped serving requests and replaced it with the [Antigravity
+  CLI](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/).
+  The adapter remains for **enterprise Gemini Code Assist licenses only**,
+  which retain access: headless mode returns one JSON object at the end (no
+  live progress events) and has no resumable session — follow-ups are fresh
+  briefs. YOLO approval mode may enable Gemini's own sandbox by default,
+  which wants Docker; if workers fail with sandbox errors, disable sandboxing
+  in Gemini's settings.json or install Docker.
 - **Claude (as worker):** headless `claude -p` with `--permission-mode
   bypassPermissions` (override via `FLEET_CLAUDE_PERMISSIONS`; optional caps
   `FLEET_CLAUDE_MAX_TURNS` / `FLEET_CLAUDE_MAX_BUDGET_USD`). Resume is
@@ -213,6 +243,40 @@ Registry: `$FLEET_PROVIDERS` → `./.fleet/providers.json` →
   never comes. Local models: run LM Studio's server (or Ollama), configure it
   as an OpenAI-compatible provider in `opencode.json`, then reference it in
   the registry.
+- **Grok Build:** auth is subscription-gated (`grok login`, needs SuperGrok
+  or X Premium+; `--device-auth` for headless boxes). Early beta and the JSON
+  output schema is unpublished — the parser uses tolerant key search; verify
+  extraction on first run. Resume supported (`-r`); `--effort` maps through
+  like codex. As of 2026-07 full Grok 4.5 access is confirmed only on
+  SuperGrok Heavy; `-m grok-build-0.1` is the cheap mechanical-work model.
+- **Cursor:** `cursor-agent login` (browser) or `CURSOR_API_KEY` for
+  headless. Runs with `--force` — required or headless runs stall. Resume
+  supported (`--resume`). Known headless quirk: it has been reported to
+  fabricate "Questions skipped by the user" answers rather than failing when
+  a brief is ambiguous — keep briefs fully self-contained.
+- **Copilot:** auth via `copilot` login flow or `COPILOT_GITHUB_TOKEN` /
+  `GH_TOKEN` / `GITHUB_TOKEN`. Plain-text output only (no usage reporting)
+  and no scriptable resume — follow-ups are fresh briefs. Runs with
+  `--allow-all-tools --no-ask-user`; GitHub recommends containers for that
+  flag — the fleet's git-repo-only + diff-review discipline is the
+  mitigation, same as every other adapter here. Model choice affects your
+  plan's premium-request multipliers.
+- **Qwen Code:** Gemini CLI fork with Claude-style stream-json output and
+  session resume. The old OAuth free tier (~2000 req/day) was discontinued —
+  use an API key or Qwen Coding Plan. Hard caps are available via
+  `FLEET_QWEN_MAX_WALL_TIME` / `FLEET_QWEN_MAX_TURNS` (distinct exit codes:
+  53 turn limit, 55 budget). No sandbox in yolo mode.
+- **Droid (Factory):** `FACTORY_API_KEY`. The brief passes as a file via
+  `droid exec -f`. Autonomy defaults to `--auto medium` (override with
+  `FLEET_DROID_AUTO`); medium permits git commits, so the brief's
+  do-not-commit instruction is the guard — never use `high` (deploy/push
+  territory) for fleet work. Resume (`--session-id`) and reasoning effort
+  (`-r`) supported. JSON output reports no token counts.
+- **Amp:** `amp login` or `AMP_API_KEY`; usage-billed credits with no token
+  reporting — watch the ampcode.com dashboard. Plain-text output, no
+  scriptable resume, no model pinning (Amp routes models itself). Prefer
+  Amp's settings.json command allowlist over `--dangerously-allow-all`
+  (then set `FLEET_AMP_ALLOW_ALL=0`).
 
 ## Verify before trusting (first-run checklist)
 
@@ -224,21 +288,48 @@ per provider on a throwaway repo:
 
 1. **Codex** (carried from v1): stdin prompt via `codex exec ... -`; `resume`
    flag placement; JSONL field names; your plan's rate-limit message strings.
-2. **Gemini:** that `--output-format json` emits the `{response, stats}`
-   object on your version (this shipped mid-2025; very old versions lack it);
-   that `--approval-mode yolo` runs unattended in your environment (sandbox/
-   Docker interaction); quota-exhaustion message strings against
-   `ADAPTER_RATE_PATTERNS` in `adapters/gemini.sh`.
-3. **OpenCode:** exact event shapes from `--format json` (the parser is
+2. **Antigravity:** `agy --version` is >= 1.1.1; that `agy -p` with stdout
+   redirected to a file actually captures the response on your version (the
+   1.0.0 non-TTY stdout drop); that `--dangerously-skip-permissions` runs
+   unattended in your environment; daily-quota exhaustion message strings
+   against `ADAPTER_RATE_PATTERNS` in `adapters/antigravity.sh`.
+3. **Gemini (enterprise licenses only):** that `--output-format json` emits
+   the `{response, stats}` object on your version (this shipped mid-2025;
+   very old versions lack it); that `--approval-mode yolo` runs unattended in
+   your environment (sandbox/Docker interaction); quota-exhaustion message
+   strings against `ADAPTER_RATE_PATTERNS` in `adapters/gemini.sh`.
+4. **OpenCode:** exact event shapes from `--format json` (the parser is
    tolerant, but confirm `final`/`usage` extraction on your version); that a
    session id is discoverable in the event stream for `--resume` (if not,
    `opencode session list` is the fallback — adjust `parse_events.py`);
    permissions config actually allows unattended edit/bash.
-4. **Claude worker:** that `claude -p --output-format json` emits the result
+5. **Claude worker:** that `claude -p --output-format json` emits the result
    object with `session_id`/`total_cost_usd` on your version, and that
    `--permission-mode bypassPermissions` runs unattended in your environment.
-5. **Registry pricing:** the example file's per-token prices are placeholders —
-   `/fleet-init` researches real ones; verify before enabling API providers.
+6. **Grok Build:** the JSON output schema is unpublished — run
+   `grok -p "Say ok" --output-format json` once and confirm the parser's
+   `session`/`final`/`usage` extraction (generic key search in
+   `parse_events.py`); rate-limit and auth message strings against the
+   patterns in `adapters/grok.sh`; that `--always-approve` runs unattended.
+7. **Cursor:** stream-json event shapes on your version (`session_id`
+   discovery for `--resume`); that `--force` actually prevents approval
+   stalls; the headless fabricated-answers quirk against a deliberately
+   ambiguous test brief.
+8. **Copilot:** that `-p` with `-s` emits the response on stdout on your
+   version; that `--allow-all-tools --no-ask-user` runs unattended; premium
+   request consumption for your chosen `--model`.
+9. **Qwen Code:** stream-json event shapes and `--resume` session id
+   discovery; that `--approval-mode yolo` runs unattended; your account's
+   actual quota/pricing (the OAuth free tier was discontinued).
+10. **Droid:** the result object's field names on your version; that your
+    chosen `--auto` level covers the brief's needs without approval stalls;
+    Factory billing for your plan.
+11. **Amp:** that `amp -x` prints the final response to stdout when
+    redirected to a file; whether a thread id is discoverable for follow-ups
+    on your version (if so, consider wiring resume in `adapters/amp.sh`);
+    credit consumption per task on the dashboard.
+12. **Registry pricing:** the example file's per-token prices are placeholders —
+    `/fleet-init` researches real ones; verify before enabling API providers.
 
 ## Layout
 
@@ -254,9 +345,10 @@ fleet/
         ├── fleet-dispatch.sh        provider-agnostic dispatcher
         ├── fleet-status.sh          provider-aware classification
         ├── registry.py              providers.json reader
-        ├── parse_events.py          codex | opencode | gemini parsing
+        ├── parse_events.py          per-CLI output parsing (JSONL, NDJSON, object, text)
         ├── ledger.py                outcome tracking + summaries
-        └── adapters/{codex.sh, gemini.sh, opencode.sh, claude.sh}
+        └── adapters/{codex, antigravity, gemini, opencode, claude,
+                      grok, cursor, copilot, qwen, droid, amp}.sh
 ```
 
 Plus `install.sh` / `install.ps1` at the repo root — self-bootstrapping

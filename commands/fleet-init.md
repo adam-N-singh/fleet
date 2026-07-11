@@ -18,8 +18,12 @@ Read first:
 Then:
 
 1. **Interview the user** about what they actually have. For each candidate:
-   which CLIs are installed (`codex`, `gemini`, `opencode` — verify with
-   `command -v`), how they pay (subscription plan, API key, free tier, local),
+   which CLIs are installed (`codex`, `agy` (Antigravity), `gemini`,
+   `grok` (Grok Build), `cursor-agent`, `copilot`, `qwen`, `droid`, `amp`,
+   `claude`, `opencode` — verify with `command -v`; note Gemini CLI was
+   retired 2026-06-18 except for enterprise Gemini Code Assist licenses, so
+   steer most users to `antigravity`), how they pay (subscription plan, API
+   key, free tier, local),
    and for OpenCode-routed providers, which are authenticated
    (`opencode auth list`) and what local servers exist (LM Studio / Ollama).
    Do not add providers the user doesn't have access to — an aspirational
@@ -44,6 +48,11 @@ Then:
    and fix any problems.
 
 5. Remind the user of per-CLI setup the registry can't do for them: `codex
-   login`, gemini auth, `opencode auth login` per provider, OpenCode
+   login`, Antigravity's `agy` Google login (or `GEMINI_API_KEY` /
+   `ANTIGRAVITY_API_KEY`), gemini auth (enterprise only), `grok login`
+   (needs SuperGrok / X Premium+), `cursor-agent login` or `CURSOR_API_KEY`,
+   `copilot` login or `GH_TOKEN`, qwen API key or Coding Plan,
+   `FACTORY_API_KEY` (droid), `amp login` or `AMP_API_KEY`, `opencode auth
+   login` per provider, OpenCode
    permissions config for unattended runs, and LM Studio's local server if
    used (see the plugin README's per-provider setup section).

@@ -27,7 +27,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Windows-friendly python resolution: Git Bash usually has `python`, not `python3`.
 PY="${FLEET_PYTHON:-}"
 if [[ -z "$PY" ]]; then
-  if command -v ${PY} >/dev/null 2>&1; then PY="python3"; else PY="python"; fi
+  if command -v python3 >/dev/null 2>&1; then PY="python3"; else PY="python"; fi
 fi
 RUNS_DIR="${FLEET_RUNS_DIR:-.fleet-runs}"
 MAX_TOTAL="${FLEET_MAX_WORKERS_TOTAL:-4}"
