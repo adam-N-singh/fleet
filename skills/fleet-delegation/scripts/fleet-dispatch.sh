@@ -133,6 +133,14 @@ TASK_DIR="$RUNS_DIR/$TASK_ID"
 mkdir -p "$TASK_DIR"
 cp "$BRIEF" "$TASK_DIR/brief.md"
 
+# Snapshot the workspace state BEFORE the worker starts, so diff review can
+# distinguish the worker's changes from anything that was already dirty.
+{
+  echo "revision $(git -C "$WORKDIR" rev-parse HEAD 2>/dev/null || echo unknown)"
+  echo "branch $(git -C "$WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+  git -C "$WORKDIR" status --porcelain 2>/dev/null
+} > "$TASK_DIR/pre-state" || true
+
 CMD=()
 CMD_STDIN="yes"
 adapter_build_cmd "$MODEL" "$EFFORT" "$WORKDIR" "$RESUME" "$TASK_DIR/brief.md"

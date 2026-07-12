@@ -78,7 +78,20 @@ task to the fleet or a named provider, skip this rubric — the user decided.
 
 ## Step 2 — Route: which provider and model?
 
-Apply these filters **in order**:
+First classify the task by **uncertainty, not apparent size** — uncertainty,
+more than length, predicts which workers can survive it:
+
+- **Clear:** the solution and finish line are already known (boilerplate,
+  mechanical edits, tests against settled behavior). Any capable provider —
+  route purely by cost.
+- **Judgment-heavy:** tractable implementation with tradeoffs or failure
+  modes to think through. Frontier-harness providers with a good ledger
+  record; raise `--effort` where supported rather than jumping cost tiers.
+- **Open-ended:** the problem or safe path must be discovered first. Do not
+  delegate discovery — do the thinking yourself, then dispatch the settled
+  plan as Clear/Judgment-heavy pieces.
+
+Then apply these filters **in order**:
 
 1. **Capability filter.** Eliminate providers that can't do the task:
    context window too small for the required files; `trust: restricted`
@@ -122,6 +135,18 @@ default model applies. Never invent model names.
    log path — record the TASK_ID in your todo list and tell the user in one
    line what you delegated, where, and why. Never dispatch silently.
 
+**Multi-task builds: show the plan.** When delegating two or more tasks,
+present a dispatch plan before the first dispatch and keep it updated:
+
+```markdown
+| Task | Provider | Model/effort | Depends on | Gate (acceptance) | Status |
+```
+
+**Dependency gating:** never dispatch a brief whose inputs depend on another
+in-flight task — wait for the upstream artifact to exist and verify it first.
+When chaining, the downstream brief references the actual artifact (diff,
+file paths, test output), never your summary of it.
+
 If dispatch prints `PROVIDER_UNAVAILABLE` or `BUSY`: move to the **next
 provider in your routing order and re-dispatch the same brief.** Absorb the
 task yourself only when no capable provider remains. A provider being down
@@ -145,7 +170,10 @@ one? Wait, or take the task back and treat partial changes as untrusted.
 
 `STATUS DONE` means the worker exited cleanly — a claim, not evidence. Before
 accepting: read `git status` and `git diff` (check nothing outside the brief's
-scope changed), run the brief's acceptance commands, and run the
+scope changed) against the pre-dispatch snapshot in
+`.fleet-runs/<TASK_ID>/pre-state` (revision, branch, and files that were
+already dirty — anything listed there is not the worker's doing), run the
+brief's acceptance commands, and run the
 `verification-gate` skill if available. Only then report completion.
 
 If verification fails:
@@ -202,9 +230,14 @@ intelligence.
   `cursor-agent login` / `CURSOR_API_KEY`, `copilot` login / `GH_TOKEN`,
   qwen API key, `FACTORY_API_KEY`, `amp login` / `AMP_API_KEY`,
   `opencode auth login`). Re-route meanwhile.
-- **FAILED** — read ERRORS and stderr. Ambiguous brief → one retry with a
-  corrected brief, same provider. Anything else → next provider or absorb.
-  Never retry more than once per provider.
+- **FAILED** — read ERRORS and stderr, then pick the rung that matches the
+  failure. Transient error or a brief that lacked concrete evidence → one
+  retry, same provider, corrected brief. Failure that reveals a capability
+  gap → **escalate, never sidestep**: raise `--effort` where supported, or
+  re-route to a *stronger* provider (per ledger record / registry strengths) —
+  never retry a capability failure on a weaker or equal-cheaper worker just
+  because the cascade lists it next. No stronger option → absorb. Never retry
+  more than once per provider.
 - **INCOMPLETE** — worker died mid-run. Inspect the diff, revert partial
   changes, treat as FAILED.
 - Ledger every one of these.
@@ -228,3 +261,10 @@ Keep the user oriented: one line per dispatch (what, where, why), status
 changes when you check in, and on acceptance a summary of what was built, what
 you verified, and what it cost (USAGE / ledger figures). Cost visibility is a
 core promise of this system — surface it, don't bury it.
+
+**Report the route actually run, never the planned one.** If a task cascaded
+to a different provider, was remediated, or was absorbed, the final summary
+names the provider/model that actually produced the accepted result and what
+the detour cost. If a capability the plan relied on turned out to be
+unavailable (a missing effort flag, a failed resume), say so — do not present
+the fallback as if it were the plan.
