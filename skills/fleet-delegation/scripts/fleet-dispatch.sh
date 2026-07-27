@@ -185,7 +185,10 @@ for _ in $(seq 1 20); do
 done
 
 if [[ -f "$TASK_DIR/exit-code" ]]; then
-  exec "$SCRIPT_DIR/fleet-status.sh" "$TASK_ID"
+  # Invoked via `bash` rather than directly: plugin installs, zip extraction,
+  # and Windows checkouts routinely drop the executable bit, and a failed exec
+  # here would swallow the terminal status of every fast-failing worker.
+  exec bash "$SCRIPT_DIR/fleet-status.sh" "$TASK_ID"
 fi
 
 echo "DISPATCHED"
