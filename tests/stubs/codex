@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Stub of the OpenAI Codex CLI (codex exec --json), emitting the documented
+# JSONL event shapes. Behavior is selected with STUB_MODE:
+#   ok   (default) thread.started -> work -> agent_message -> turn.completed
+#   fail exit 1 with a generic error on stderr
+#   rate exit 1 with a rate-limit message on stderr
+#   auth exit 1 with an auth failure on stderr
+#   hang emit thread.started, then sleep (for concurrency/INCOMPLETE tests)
+mode="${STUB_MODE:-ok}"
+
+case "$mode" in
+  fail)
+    echo "boom: stub exploded" >&2
+    exit 1
+    ;;
+  rate)
+    echo "429 Too Many Requests: usage limit reached" >&2
+    exit 1
+    ;;
+  auth)
+    echo "authentication failed: run codex login" >&2
+    exit 1
+    ;;
+  hang)
+    echo '{"type":"thread.started","thread_id":"th_hang"}'
+    sleep 30
+    exit 0
+    ;;
+  ok|*)
+    cat > /dev/null  # consume the brief on stdin like the real CLI
+    echo '{"type":"thread.started","thread_id":"th_stub1"}'
+    sleep 4
+    echo '{"type":"item.completed","item":{"type":"agent_message","text":"stub codex finished the task"}}'
+    echo '{"type":"turn.completed","usage":{"input_tokens":100,"output_tokens":20}}'
+    exit 0
+    ;;
+esac

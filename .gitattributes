@@ -5,3 +5,6 @@
 # (autocrlf=true would give them CRLF, which breaks them under Git Bash)
 *.sh text eol=lf
 *.py text eol=lf
+
+# Extension-less stub CLIs are bash scripts too
+tests/stubs/* text eol=lf

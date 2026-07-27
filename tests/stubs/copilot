@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Stub of the GitHub Copilot CLI (copilot -p "<prompt>" -s): plain-text
+# response on stdout, no structured output. STUB_MODE: ok (default) | fail.
+mode="${STUB_MODE:-ok}"
+
+case "$mode" in
+  fail)
+    echo "copilot stub failure" >&2
+    exit 1
+    ;;
+  ok|*)
+    echo "stub copilot did the thing"
+    exit 0
+    ;;
+esac

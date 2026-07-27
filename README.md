@@ -283,8 +283,9 @@ Registry: `$FLEET_PROVIDERS` → `./.fleet/providers.json` →
 The provider-agnostic core (registry resolution, routing inputs, dispatch,
 background execution, per-provider cooldown isolation, status classification,
 cascade signaling, ledger) is tested against stubs that mimic each CLI's
-documented output. What depends on your installed CLI versions — verify once
-per provider on a throwaway repo:
+documented output — see `tests/` (run locally with `pytest tests/ && bash
+tests/test_dispatch.sh`; CI runs both on Linux and Windows). What depends on
+your installed CLI versions — verify once per provider on a throwaway repo:
 
 1. **Codex** (carried from v1): stdin prompt via `codex exec ... -`; `resume`
    flag placement; JSONL field names; your plan's rate-limit message strings.
@@ -336,7 +337,14 @@ per provider on a throwaway repo:
 ```
 fleet/
 ├── .claude-plugin/{plugin.json, marketplace.json}
+├── .github/workflows/ci.yml     shellcheck + pytest + dispatch integration tests
 ├── commands/{dispatch.md, fleet-status.md, fleet-init.md}
+├── tests/
+│   ├── test_registry.py         resolution order, get/list/validate contract
+│   ├── test_parse_events.py     every adapter output format vs documented shapes
+│   ├── test_ledger.py           outcomes, pacing vs soft caps, true-cost math
+│   ├── test_dispatch.sh         dispatch/status/cooldown/concurrency vs stub CLIs
+│   └── stubs/{codex, copilot}   fake CLIs emitting documented output
 └── skills/fleet-delegation/
     ├── SKILL.md                     rubric, routing, supervision, ledger protocol
     ├── references/{brief-template.md, providers-guide.md}

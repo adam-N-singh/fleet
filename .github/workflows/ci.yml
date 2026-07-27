@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pytest
+        run: pip install pytest
+      - name: Shellcheck (errors only)
+        run: |
+          shellcheck -S error \
+            install.sh \
+            skills/fleet-delegation/scripts/*.sh \
+            skills/fleet-delegation/scripts/adapters/*.sh \
+            tests/test_dispatch.sh
+      - name: Python unit tests
+        run: pytest tests/ -q
+      - name: Dispatch integration tests (stub CLIs)
+        run: bash tests/test_dispatch.sh
+
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pytest
+        run: pip install pytest
+      - name: Python unit tests
+        run: pytest tests/ -q
+      - name: Dispatch integration tests (stub CLIs, Git Bash)
+        shell: bash
+        run: bash tests/test_dispatch.sh
