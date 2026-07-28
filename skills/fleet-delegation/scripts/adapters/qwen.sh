@@ -21,8 +21,8 @@
 ADAPTER_BIN="qwen"
 ADAPTER_EVENT_FORMAT="ndjson"
 ADAPTER_SUPPORTS_RESUME="yes"
-ADAPTER_RATE_PATTERNS='rate limit|rate_limit|rate-limit|429|too many requests|quota|resource_exhausted|daily limit'
-ADAPTER_AUTH_PATTERNS='401|unauthorized|unauthenticated|not logged in|login required|invalid api key|authentication failed'
+ADAPTER_RATE_PATTERNS='rate limit|rate_limit|rate-limit|(^|[^0-9])429([^0-9]|$)|too many requests|quota|resource_exhausted|daily limit'
+ADAPTER_AUTH_PATTERNS='(^|[^0-9])401([^0-9]|$)|unauthorized|unauthenticated|not logged in|login required|invalid api key|authentication failed'
 
 # adapter_build_cmd MODEL EFFORT WORKDIR RESUME BRIEF_PATH
 adapter_build_cmd() {

@@ -17,8 +17,8 @@
 ADAPTER_BIN="opencode"
 ADAPTER_EVENT_FORMAT="opencode"
 ADAPTER_SUPPORTS_RESUME="yes"
-ADAPTER_RATE_PATTERNS='429|rate limit|rate_limit|too many requests|quota|overloaded|resource_exhausted'
-ADAPTER_AUTH_PATTERNS='401|unauthorized|invalid api key|authentication|no credentials|not logged in'
+ADAPTER_RATE_PATTERNS='(^|[^0-9])429([^0-9]|$)|rate limit|rate_limit|too many requests|quota|overloaded|resource_exhausted'
+ADAPTER_AUTH_PATTERNS='(^|[^0-9])401([^0-9]|$)|unauthorized|invalid api key|authentication|no credentials|not logged in'
 
 # adapter_build_cmd MODEL EFFORT WORKDIR RESUME BRIEF_PATH
 adapter_build_cmd() {

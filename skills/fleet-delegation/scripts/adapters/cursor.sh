@@ -21,8 +21,8 @@
 ADAPTER_BIN="cursor-agent"
 ADAPTER_EVENT_FORMAT="ndjson"
 ADAPTER_SUPPORTS_RESUME="yes"
-ADAPTER_RATE_PATTERNS='rate limit|rate_limit|rate-limit|429|too many requests|quota|usage limit'
-ADAPTER_AUTH_PATTERNS='401|unauthorized|not logged in|login required|invalid api key|authentication failed|unauthenticated'
+ADAPTER_RATE_PATTERNS='rate limit|rate_limit|rate-limit|(^|[^0-9])429([^0-9]|$)|too many requests|quota|usage limit'
+ADAPTER_AUTH_PATTERNS='(^|[^0-9])401([^0-9]|$)|unauthorized|not logged in|login required|invalid api key|authentication failed|unauthenticated'
 
 # adapter_build_cmd MODEL EFFORT WORKDIR RESUME BRIEF_PATH
 adapter_build_cmd() {

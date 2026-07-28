@@ -25,8 +25,8 @@
 ADAPTER_BIN="grok"
 ADAPTER_EVENT_FORMAT="grok"
 ADAPTER_SUPPORTS_RESUME="yes"
-ADAPTER_RATE_PATTERNS='rate limit|rate_limit|rate-limit|429|too many requests|quota|usage limit|resource_exhausted'
-ADAPTER_AUTH_PATTERNS='401|unauthorized|not logged in|login required|subscription required|authentication failed|invalid api key'
+ADAPTER_RATE_PATTERNS='rate limit|rate_limit|rate-limit|(^|[^0-9])429([^0-9]|$)|too many requests|quota|usage limit|resource_exhausted'
+ADAPTER_AUTH_PATTERNS='(^|[^0-9])401([^0-9]|$)|unauthorized|not logged in|login required|subscription required|authentication failed|invalid api key'
 
 # adapter_build_cmd MODEL EFFORT WORKDIR RESUME BRIEF_PATH
 adapter_build_cmd() {

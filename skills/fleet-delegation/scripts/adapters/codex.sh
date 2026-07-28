@@ -6,8 +6,8 @@
 ADAPTER_BIN="codex"
 ADAPTER_EVENT_FORMAT="codex"
 ADAPTER_SUPPORTS_RESUME="yes"
-ADAPTER_RATE_PATTERNS='rate limit|rate_limit|rate-limit|429|too many requests|usage limit|usage_limit|quota'
-ADAPTER_AUTH_PATTERNS='401|unauthorized|not logged in|login required|invalid api key|authentication failed'
+ADAPTER_RATE_PATTERNS='rate limit|rate_limit|rate-limit|(^|[^0-9])429([^0-9]|$)|too many requests|usage limit|usage_limit|quota'
+ADAPTER_AUTH_PATTERNS='(^|[^0-9])401([^0-9]|$)|unauthorized|not logged in|login required|invalid api key|authentication failed'
 
 # adapter_build_cmd MODEL EFFORT WORKDIR RESUME BRIEF_PATH
 adapter_build_cmd() {

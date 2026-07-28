@@ -22,8 +22,8 @@
 ADAPTER_BIN="gemini"
 ADAPTER_EVENT_FORMAT="gemini"
 ADAPTER_SUPPORTS_RESUME="no"
-ADAPTER_RATE_PATTERNS='429|resource_exhausted|rate limit|rate_limit|too many requests|quota|daily limit'
-ADAPTER_AUTH_PATTERNS='401|unauthenticated|permission_denied|invalid api key|not logged in|credential'
+ADAPTER_RATE_PATTERNS='(^|[^0-9])429([^0-9]|$)|resource_exhausted|rate limit|rate_limit|too many requests|quota|daily limit'
+ADAPTER_AUTH_PATTERNS='(^|[^0-9])401([^0-9]|$)|unauthenticated|permission_denied|invalid api key|not logged in|credential'
 
 # adapter_build_cmd MODEL EFFORT WORKDIR RESUME BRIEF_PATH
 adapter_build_cmd() {
