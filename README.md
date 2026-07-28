@@ -291,10 +291,15 @@ your installed CLI versions — verify once per provider on a throwaway repo:
 > **copilot**, **claude**, and **opencode** (LM Studio local model) have each
 > passed a real end-to-end dispatch — background execution, status
 > classification, output/session/usage parsing, verification-gated acceptance,
-> and ledger recording — against the actual CLIs. The other seven adapters
-> (antigravity, gemini, grok, cursor, qwen, droid, amp) are stub-tested
-> against documented output shapes only, so the checklist below matters most
-> for them.
+> and ledger recording — against the actual CLIs. Live testing also exercised
+> the failure path: a real local-model failure (context overflow) cascaded
+> correctly to the next provider, and exposed a status-classification bug
+> fixed in **v0.6.2** — bare `401`/`429` in the adapter patterns could match
+> incidental numerics like epoch-ms timestamps, reporting phantom
+> AUTH_ERROR/RATE_LIMITED (upgrade if you're on v0.6.0/v0.6.1). The other
+> seven adapters (antigravity, gemini, grok, cursor, qwen, droid, amp) are
+> stub-tested against documented output shapes only, so the checklist below
+> matters most for them.
 
 1. **Codex** (carried from v1): stdin prompt via `codex exec ... -`; `resume`
    flag placement; JSONL field names; your plan's rate-limit message strings.
