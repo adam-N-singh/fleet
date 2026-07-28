@@ -287,6 +287,15 @@ documented output — see `tests/` (run locally with `pytest tests/ && bash
 tests/test_dispatch.sh`; CI runs both on Linux and Windows). What depends on
 your installed CLI versions — verify once per provider on a throwaway repo:
 
+> **Live-verified adapters (2026-07, Windows / Git Bash):** **codex**,
+> **copilot**, **claude**, and **opencode** (LM Studio local model) have each
+> passed a real end-to-end dispatch — background execution, status
+> classification, output/session/usage parsing, verification-gated acceptance,
+> and ledger recording — against the actual CLIs. The other seven adapters
+> (antigravity, gemini, grok, cursor, qwen, droid, amp) are stub-tested
+> against documented output shapes only, so the checklist below matters most
+> for them.
+
 1. **Codex** (carried from v1): stdin prompt via `codex exec ... -`; `resume`
    flag placement; JSONL field names; your plan's rate-limit message strings.
 2. **Antigravity:** `agy --version` is >= 1.1.1; that `agy -p` with stdout
