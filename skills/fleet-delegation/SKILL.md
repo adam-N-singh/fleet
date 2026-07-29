@@ -42,7 +42,15 @@ commands below (the shell scripts already fall back on their own).
    flags a provider REVIEW_DUE, tell the user its access terms may have
    changed and suggest refreshing that entry (Claude Code: `/fleet-init`;
    other supervisors: re-verify access/pricing and update the registry).
-3. Confirm `.fleet-runs/` is in `.gitignore`; add it on first dispatch.
+3. **Tell the user what fleet you're running.** The first time this skill is
+   used in a session, state the active configuration to the user in one or two
+   lines — enabled providers in routing order with access mode and default
+   model, plus anything notable (active cooldowns, REVIEW_DUE flags, a soft
+   cap near its limit) — so they can correct a setup that may have drifted
+   since they last looked. Do not interrogate: proceed unless the user objects,
+   but if the registry looks stale or mismatched to the work being asked for,
+   offer a refresh (Claude Code: `/fleet-init`) before dispatching.
+4. Confirm `.fleet-runs/` is in `.gitignore`; add it on first dispatch.
 
 ## Step 1 — Should this task be delegated at all?
 

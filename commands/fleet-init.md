@@ -17,6 +17,15 @@ Read first:
 
 Then:
 
+0. **If a registry already exists, show it and get direction before asking
+   anything else.** Present the current setup in a compact summary — each
+   provider with its access mode, default model, trust level, and the user's
+   own notes, plus the routing order — and ask whether they want to (a) keep
+   it unchanged (stop here), (b) adjust specific entries, or (c) redo the full
+   interview. Never ask reconfiguration questions the existing registry
+   already answers unless the user chose the full redo; for (b), touch only
+   the entries they named and preserve everything else verbatim.
+
 1. **Interview the user** about what they actually have. For each candidate:
    which CLIs are installed (`codex`, `agy` (Antigravity), `gemini`,
    `grok` (Grok Build), `cursor-agent`, `copilot`, `qwen`, `droid`, `amp`,
