@@ -55,7 +55,7 @@ needed judgment.
 log, and the ledger shown alongside it:
 [`fleet-demo.mp4`](https://github.com/adam-N-singh/fleet/releases/latest) ·
 also available as an unedited terminal recording,
-[`fleet-demo-plain.mp4`](https://github.com/adam-N-singh/fleet/releases/latest).
+[`fleet-demo-plain-terminal.mp4`](https://github.com/adam-N-singh/fleet/releases/latest).
 
 Everything on screen is a real run against a real five-provider registry.
 What it produced, verified independently afterwards:
