@@ -42,6 +42,34 @@ dispatchable worker. Claude Code additionally gets a plugin wrapper with
 > enable providers whose billing you understand. If you are not comfortable
 > with unattended agents modifying your working tree, do not install this.
 
+## Demo
+
+One prompt asking for four things. The supervisor reads the repo, writes two
+self-contained briefs, dispatches them to **Codex and Copilot in parallel**,
+re-runs each brief's acceptance commands itself, and keeps the two tasks that
+needed judgment.
+
+![fleet: two briefs written and dispatched to codex and copilot in parallel](docs/fleet-demo.gif)
+
+**Full walkthrough (3:36)** — the same session with the brief, the worker's own
+log, and the ledger shown alongside it:
+[`fleet-demo.mp4`](https://github.com/adam-N-singh/fleet/releases/latest) ·
+also available as an unedited terminal recording,
+[`fleet-demo-plain.mp4`](https://github.com/adam-N-singh/fleet/releases/latest).
+
+Everything on screen is a real run against a real five-provider registry.
+What it produced, verified independently afterwards:
+
+| task | routed to | outcome |
+|---|---|---|
+| JSON config loader + 29 tests + CLI wiring | `codex` | accepted · 8m15s |
+| Concurrent `run_checks` + 9 tests | `copilot` | accepted · first pass |
+| README usage docs | *kept* | depends on both workers landing first |
+| Incident-history storage | *kept* | open-ended design — never delegated |
+
+51 tests pass. Nothing was committed by a worker. Both providers were on
+flat-rate subscriptions, so the per-token rung was never touched.
+
 ## What it does
 
 - **Registry-driven fleet knowledge.** A user-owned `providers.json` describes
