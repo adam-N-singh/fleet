@@ -196,7 +196,10 @@ def cmd_summary(args):
         print(f"\nREALIZED SAVINGS ${sum(all_saved):.4f} "
               f"({len(all_saved)}/{len(rows)} entries with estimates) — "
               f"est. self-cost minus worker true cost; misroute spend counts "
-              f"negative. Entries logged without --self-cost-usd are excluded.")
+              f"negative. Self-cost is valued at the supervisor's researched "
+              f"model rates: cash avoided on per-token access; on a flat-rate "
+              f"plan, preserved quota at market value, not cash refunded. "
+              f"Entries logged without --self-cost-usd are excluded.")
     return 0
 
 
@@ -281,7 +284,8 @@ def cmd_dashboard(args):
           f" | wasted on misroutes ${wasted + total_redo:.4f}"
           f" ({misroutes} tasks{', incl redo $%.4f' % total_redo if total_redo else ''})"
           f" | true cost ${total_cost + total_redo:.4f}"
-          + (f" | realized savings ${sum(saved):.4f} ({len(saved)} est.)" if saved else ""))
+          + (f" | realized savings ${sum(saved):.4f} "
+             f"({len(saved)} est., at supervisor rates)" if saved else ""))
     print("Flat-rate/subscription dispatches show $0 — their budget signal is the "
           "PACING view (ledger.py usage), not dollars.")
     return 0

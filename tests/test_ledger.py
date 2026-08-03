@@ -132,6 +132,9 @@ def test_summary_realized_savings(tmp_path, isolated_env):
     out = r.stdout
     assert "SAVED=$1.7500 (3/4 est.)" in out
     assert "REALIZED SAVINGS $1.7500 (3/4 entries with estimates)" in out
+    # the figure is self-describing: valuation basis is stated in the output
+    assert "valued at the supervisor's researched model rates" in out
+    assert "preserved quota at market value, not cash refunded" in out
 
 
 def test_summary_flat_rate_savings_full_self_cost(tmp_path, isolated_env):
@@ -260,7 +263,7 @@ def test_dashboard_realized_savings(tmp_path, isolated_env):
     ])
     r = run_tool("ledger.py", "dashboard", env=env, cwd=tmp_path)
     # +2.0 from the accepted task, -0.5 from the misroute
-    assert "realized savings $1.5000 (2 est.)" in r.stdout
+    assert "realized savings $1.5000 (2 est., at supervisor rates)" in r.stdout
 
 
 def test_dashboard_empty_window(tmp_path, isolated_env):
