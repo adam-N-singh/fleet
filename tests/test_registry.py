@@ -137,6 +137,22 @@ def test_list_future_review_not_flagged(tmp_path, isolated_env):
     assert "REVIEW_DUE" not in r.stdout
 
 
+def test_list_shows_supervisor_rates(tmp_path, isolated_env):
+    data = json.loads(json.dumps(MINIMAL))
+    data["supervisor"] = {"model": "claude-fable-5", "input_per_mtok": 5,
+                          "output_per_mtok": 25, "notes": "pricing verified 2026-08"}
+    write_registry(tmp_path / ".fleet" / "providers.json", data)
+    r = run_tool("registry.py", "list", env=isolated_env, cwd=tmp_path)
+    assert ("SUPERVISOR model=claude-fable-5 rates in $5/Mtok, out $25/Mtok "
+            "— pricing verified 2026-08") in r.stdout
+
+
+def test_list_nudges_when_supervisor_rates_missing(tmp_path, isolated_env):
+    write_registry(tmp_path / ".fleet" / "providers.json", MINIMAL)
+    r = run_tool("registry.py", "list", env=isolated_env, cwd=tmp_path)
+    assert "SUPERVISOR rates not set" in r.stdout
+
+
 # ---------- validate ---------------------------------------------------------
 
 def test_validate_ok_counts_enabled(tmp_path, isolated_env):
@@ -198,3 +214,24 @@ def test_validate_soft_cap_shape(tmp_path, isolated_env):
     r = run_tool("registry.py", "validate", env=isolated_env, cwd=tmp_path)
     assert r.returncode == 1
     assert "soft_weekly_cap" in r.stdout
+
+
+def test_validate_supervisor_needs_numeric_rates(tmp_path, isolated_env):
+    data = json.loads(json.dumps(MINIMAL))
+    data["supervisor"] = {"model": "m", "input_per_mtok": "cheap"}  # non-numeric, missing output
+    write_registry(tmp_path / ".fleet" / "providers.json", data)
+    r = run_tool("registry.py", "validate", env=isolated_env, cwd=tmp_path)
+    assert r.returncode == 1
+    assert "supervisor block needs numeric" in r.stdout
+
+
+def test_validate_supervisor_ok_and_absent_ok(tmp_path, isolated_env):
+    data = json.loads(json.dumps(MINIMAL))
+    data["supervisor"] = {"model": "m", "input_per_mtok": 5, "output_per_mtok": 25}
+    write_registry(tmp_path / ".fleet" / "providers.json", data)
+    r = run_tool("registry.py", "validate", env=isolated_env, cwd=tmp_path)
+    assert r.returncode == 0
+    # absent block stays valid — the field is optional
+    write_registry(tmp_path / ".fleet" / "providers.json", MINIMAL)
+    r = run_tool("registry.py", "validate", env=isolated_env, cwd=tmp_path)
+    assert r.returncode == 0

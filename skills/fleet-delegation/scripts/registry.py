@@ -100,6 +100,16 @@ def main():
         order = data.get("routing", {}).get("prefer_order", [])
         if order:
             print(f"PREFER_ORDER {' > '.join(order)}")
+        sup = data.get("supervisor")
+        if isinstance(sup, dict):
+            print(f"SUPERVISOR model={sup.get('model', '?')} "
+                  f"rates in ${sup.get('input_per_mtok', '?')}/Mtok, "
+                  f"out ${sup.get('output_per_mtok', '?')}/Mtok"
+                  + (f" — {sup['notes']}" if sup.get("notes") else ""))
+        else:
+            print("SUPERVISOR rates not set — self-cost and realized-savings "
+                  "estimates need researched pricing for the supervisor's own "
+                  "model (run /fleet-init or add a top-level 'supervisor' block)")
         for name, p in providers.items():
             if not p.get("enabled", False):
                 print(f"\n{name}: DISABLED")
@@ -156,6 +166,13 @@ def main():
         for name in data.get("routing", {}).get("prefer_order", []):
             if name not in providers:
                 problems.append(f"routing.prefer_order references unknown provider '{name}'")
+        sup = data.get("supervisor")
+        if sup is not None:
+            if not isinstance(sup, dict) or not all(
+                    isinstance(sup.get(k), (int, float))
+                    for k in ("input_per_mtok", "output_per_mtok")):
+                problems.append("supervisor block needs numeric input_per_mtok and "
+                                "output_per_mtok (researched rates, not guesses)")
         if problems:
             for p in problems:
                 print(f"PROBLEM {p}")

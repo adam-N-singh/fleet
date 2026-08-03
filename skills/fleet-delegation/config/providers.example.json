@@ -1,5 +1,11 @@
 {
-  "_comment": "Fleet provider registry. Copy to ./.fleet/providers.json (project) or ~/.fleet/providers.json (user) and edit to match what YOU actually have access to. Run /fleet-init to have Claude draft this for you with current models and pricing. Fields: enabled, adapter (codex|antigravity|gemini|opencode|claude|grok|cursor|copilot|qwen|droid|amp), access (subscription|api|local|free), default_model (REQUIRED for opencode, provider/model form; empty elsewhere = CLI default), max_workers, cost, strengths/weaknesses (short, honest, yours \u2014 these steer routing), context_window, trust (standard|restricted), notes. Optional per-provider: soft_weekly_cap {tasks and/or tokens} for quota pacing, review_after (ISO date) for scheduled access-term changes.",
+  "_comment": "Fleet provider registry. Copy to ./.fleet/providers.json (project) or ~/.fleet/providers.json (user) and edit to match what YOU actually have access to. Run /fleet-init to have Claude draft this for you with current models and pricing. Fields: enabled, adapter (codex|antigravity|gemini|opencode|claude|grok|cursor|copilot|qwen|droid|amp), access (subscription|api|local|free), default_model (REQUIRED for opencode, provider/model form; empty elsewhere = CLI default), max_workers, cost, strengths/weaknesses (short, honest, yours \u2014 these steer routing), context_window, trust (standard|restricted), notes. Optional per-provider: soft_weekly_cap {tasks and/or tokens} for quota pacing, review_after (ISO date) for scheduled access-term changes. Optional top-level supervisor block: the supervisor's OWN model rates, used for pre-dispatch spend ballparks and realized-savings estimates.",
+  "supervisor": {
+    "model": "",
+    "input_per_mtok": 0,
+    "output_per_mtok": 0,
+    "notes": "PLACEHOLDER \u2014 research the supervisor model's current API list price (web search, never memory) and date-stamp it, e.g. 'pricing verified 2026-08'. On a flat-rate plan, use the API list price for the same model \u2014 the market value of quota that delegation preserves."
+  },
   "providers": {
     "codex": {
       "enabled": true,

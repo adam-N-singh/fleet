@@ -29,6 +29,28 @@ filtering. The one dimension the registry cannot capture is remaining
 subscription quota — no provider exposes it — so subscription budgeting is
 reactive by design: hit the limit, cool down, cascade.
 
+### Supervisor rates (top-level `supervisor` block)
+
+Optional but strongly recommended — it is what turns the ledger's
+realized-savings figures from guesses into estimates:
+
+```json
+"supervisor": {
+  "model": "<the model the supervisor session runs on>",
+  "input_per_mtok": 0.0,
+  "output_per_mtok": 0.0,
+  "notes": "pricing verified YYYY-MM"
+}
+```
+
+These are the per-token rates of the **supervisor's own model** — the
+counterfactual price used for pre-dispatch spend ballparks and for
+`--self-cost-usd` when ledgering outcomes. Like provider pricing, these must
+be researched (web search), never written from memory, and date-stamped in
+`notes`. If the supervisor runs on a flat-rate plan, record the API list price
+for the same model anyway: it is the honest market value of the tokens
+delegation avoids consuming from the plan's quota.
+
 ### One adapter, many providers
 
 The `opencode` adapter is deliberately reusable: create one registry entry per

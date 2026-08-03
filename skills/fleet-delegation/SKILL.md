@@ -122,6 +122,17 @@ Then apply these filters **in order**:
    even if cheaper — failed delegations cost more than expensive successes.
    A cheap provider with a strong record beats a pricier default.
 
+**Ballpark the spend before dispatching to a per-token provider.** Estimate
+expected tokens (brief size plus the files the worker must read for input;
+expected diff/output volume for output) and price them with the registry's
+researched `per_mtok` rates — never rates from memory. Compare against the
+same tokens at the registry's `supervisor` rates (your own model's researched
+price): that spread is the expected saving, and it is also your
+`--self-cost-usd` baseline at ledger time. If the spread is thin or negative,
+the dispatch overhead decides — keep the task. Flat-rate providers skip the
+arithmetic: their marginal cost is zero, which is why the cascade burns them
+first.
+
 State your routing choice in one line to the user when you dispatch ("sending
 the test suite to antigravity: free tier, large context, 5/5 on test tasks").
 If the user named a provider, use it. Model override: pass `--model` only when
@@ -206,7 +217,8 @@ absorbed, or failed — append to the ledger:
 python3 <scripts>/ledger.py append --provider <p> --model "<m>" \
   --task-type <implement|tests|refactor|migration|lint-fix|docs|boilerplate|review|other> \
   --outcome <accepted|remediated|absorbed|failed> --task-id <id> \
-  [--cost-usd X] [--tokens N] [--wall-seconds S] [--notes "..."]
+  [--cost-usd X] [--self-cost-usd Y] [--tokens N] [--wall-seconds S] \
+  [--notes "..."]
 ```
 
 Pull cost/tokens from the status output's USAGE line when present (opencode
@@ -227,6 +239,21 @@ cheap provider that fails often looks as expensive as it really is — sticker
 price is not the routing signal; cost-to-merge is. This step is what makes
 routing smarter every week — skipping it freezes the system at launch-day
 intelligence.
+
+**Realized savings:** for accepted/remediated tasks, also log
+`--self-cost-usd` — your estimate of what the task would have cost done
+in-session. Standard estimate: the worker's reported token usage priced at the
+registry's `supervisor` rates (the same work would have consumed roughly the
+same tokens from you). Those rates are researched and date-stamped at
+`/fleet-init` — do not substitute rates from memory; if the block is missing
+or its date-stamp is stale, research the current price (web search) and offer
+to save it to the registry. When the worker reports no tokens, estimate from
+the diff size, or omit rather than guess wildly. With it, `summary` reports
+SAVED per provider and a fleet-wide REALIZED SAVINGS total — the number that
+proves (or disproves) that delegation is paying for itself; surface it to the
+user when reporting costs. Misroute spend counts as negative savings
+automatically, so never log self-cost for absorbed/failed tasks — you paid
+the in-session cost anyway, there is no counterfactual gain.
 
 ## Failure handling
 

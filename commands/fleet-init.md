@@ -43,6 +43,14 @@ Then:
    any notable recent strengths/weaknesses. Model names and prices change
    monthly — never write these from memory. Date-stamp findings in each
    provider's `notes` field (e.g. "pricing verified 2026-07").
+   Also research the **supervisor's own model rates** — the current API list
+   price of the model this session runs on — and record them in the top-level
+   `supervisor` block (see providers-guide.md). These rates price the
+   counterfactual in pre-dispatch spend ballparks and the ledger's
+   realized-savings figures; without researched numbers those estimates run on
+   memory, which is exactly what this step exists to prevent. If the user is
+   on a flat-rate plan, use the API list price for the same model — the market
+   value of the quota delegation preserves.
 
 3. **Draft the registry** with honest strengths/weaknesses (mark unverified
    claims as such), sensible `max_workers` (1 for local, 2 elsewhere), `trust`

@@ -94,7 +94,11 @@ flat-rate subscriptions, so the per-token rung was never touched.
   preserving frontier quota for the work that needs it. `ledger.py dashboard`
   shows spend by provider by day, and the ledger books wasted spend from
   misroutes (plus redo costs) so cheap-but-flaky providers surface at their
-  true cost-to-merge, not their sticker price. A `review_after` date field
+  true cost-to-merge, not their sticker price. Each accepted task can also log
+  a self-cost estimate (what it would have cost done in-session), and
+  `ledger.py summary` reports **realized savings** — per provider and
+  fleet-wide, with misroute spend counted against it — so the core
+  cost-reduction claim is measured, not assumed. A `review_after` date field
   flags providers whose access terms are scheduled to change.
 - **Cascade fallback.** A rate-limited provider gets an automatic cooldown and
   the brief re-routes to the next capable provider; Claude absorbs the task

@@ -56,6 +56,31 @@ def test_append_accepted_without_cost_no_warning(tmp_path, isolated_env):
     assert "no --cost-usd" not in r.stdout
 
 
+def test_append_stores_self_cost(tmp_path, isolated_env):
+    env = ledger_env(tmp_path, isolated_env)
+    r = run_tool("ledger.py", "append", "--provider", "codex", "--task-type", "t",
+                 "--outcome", "accepted", "--self-cost-usd", "3.5",
+                 env=env, cwd=tmp_path)
+    assert r.returncode == 0
+    entry = json.loads((tmp_path / "ledger.jsonl").read_text())
+    assert entry["self_cost_usd"] == 3.5
+    assert "no --self-cost-usd" not in r.stdout
+
+
+def test_append_accepted_without_self_cost_nudges(tmp_path, isolated_env):
+    env = ledger_env(tmp_path, isolated_env)
+    r = run_tool("ledger.py", "append", "--provider", "x", "--task-type", "t",
+                 "--outcome", "accepted", env=env, cwd=tmp_path)
+    assert "no --self-cost-usd recorded" in r.stdout
+
+
+def test_append_failed_without_self_cost_no_nudge(tmp_path, isolated_env):
+    env = ledger_env(tmp_path, isolated_env)
+    r = run_tool("ledger.py", "append", "--provider", "x", "--task-type", "t",
+                 "--outcome", "failed", "--cost-usd", "0.1", env=env, cwd=tmp_path)
+    assert "no --self-cost-usd" not in r.stdout
+
+
 # ---------- summary ----------------------------------------------------------
 
 def test_summary_empty(tmp_path, isolated_env):
@@ -85,6 +110,50 @@ def test_summary_success_rate_and_waste(tmp_path, isolated_env):
     assert "avg_wall=90s" in out
     assert "implement: 2/2 ok" in out
     assert "tests: 0/1 ok" in out
+
+
+def test_summary_realized_savings(tmp_path, isolated_env):
+    env = ledger_env(tmp_path, isolated_env)
+    write_rows(tmp_path, [
+        # accepted with estimate: saved 3.0 - 1.0 = 2.0
+        {"ts": NOW, "provider": "a", "model": "m", "task_type": "implement",
+         "outcome": "accepted", "cost_usd": 1.0, "self_cost_usd": 3.0},
+        # remediated with estimate: saved 2.5 - 2.0 = 0.5
+        {"ts": NOW, "provider": "a", "model": "m", "task_type": "implement",
+         "outcome": "remediated", "cost_usd": 2.0, "self_cost_usd": 2.5},
+        # failed: misroute spend counts negative, -(0.5 + 0.25) = -0.75
+        {"ts": NOW, "provider": "a", "model": "m", "task_type": "tests",
+         "outcome": "failed", "cost_usd": 0.5, "redo_cost_usd": 0.25},
+        # accepted without estimate: excluded from savings, not guessed
+        {"ts": NOW, "provider": "a", "model": "m", "task_type": "docs",
+         "outcome": "accepted", "cost_usd": 0.1},
+    ])
+    r = run_tool("ledger.py", "summary", env=env, cwd=tmp_path)
+    out = r.stdout
+    assert "SAVED=$1.7500 (3/4 est.)" in out
+    assert "REALIZED SAVINGS $1.7500 (3/4 entries with estimates)" in out
+
+
+def test_summary_flat_rate_savings_full_self_cost(tmp_path, isolated_env):
+    # Flat-rate worker reports no dollar cost: savings = the whole self-cost.
+    env = ledger_env(tmp_path, isolated_env)
+    write_rows(tmp_path, [
+        {"ts": NOW, "provider": "antigravity", "model": "m", "task_type": "tests",
+         "outcome": "accepted", "self_cost_usd": 4.0},
+    ])
+    r = run_tool("ledger.py", "summary", env=env, cwd=tmp_path)
+    assert "SAVED=$4.0000 (1/1 est.)" in r.stdout
+
+
+def test_summary_no_estimates_no_savings_line(tmp_path, isolated_env):
+    env = ledger_env(tmp_path, isolated_env)
+    write_rows(tmp_path, [
+        {"ts": NOW, "provider": "a", "model": "m", "task_type": "t",
+         "outcome": "accepted"},
+    ])
+    r = run_tool("ledger.py", "summary", env=env, cwd=tmp_path)
+    assert "SAVED" not in r.stdout
+    assert "REALIZED SAVINGS" not in r.stdout
 
 
 def test_summary_provider_filter(tmp_path, isolated_env):
@@ -179,6 +248,19 @@ def test_dashboard_totals_and_waste(tmp_path, isolated_env):
     assert "TOTAL worker spend $1.4000" in out
     assert "wasted on misroutes $0.5000" in out   # failed cost + redo
     assert "true cost $1.5000" in out             # spend + redo
+
+
+def test_dashboard_realized_savings(tmp_path, isolated_env):
+    env = ledger_env(tmp_path, isolated_env)
+    write_rows(tmp_path, [
+        {"ts": NOW, "provider": "a", "model": "m", "task_type": "t",
+         "outcome": "accepted", "cost_usd": 1.0, "self_cost_usd": 3.0},
+        {"ts": NOW, "provider": "b", "model": "m", "task_type": "t",
+         "outcome": "failed", "cost_usd": 0.4, "redo_cost_usd": 0.1},
+    ])
+    r = run_tool("ledger.py", "dashboard", env=env, cwd=tmp_path)
+    # +2.0 from the accepted task, -0.5 from the misroute
+    assert "realized savings $1.5000 (2 est.)" in r.stdout
 
 
 def test_dashboard_empty_window(tmp_path, isolated_env):

@@ -6,7 +6,8 @@ learn from observed results.
 Usage:
   ledger.py append --provider P --model M --task-type T --outcome O
                    [--task-id ID] [--cost-usd X] [--redo-cost-usd Y]
-                   [--tokens N] [--wall-seconds S] [--notes "..."]
+                   [--self-cost-usd Z] [--tokens N] [--wall-seconds S]
+                   [--notes "..."]
   ledger.py summary [--provider P]
   ledger.py usage [--provider P] [--days 7]     dispatch volume vs soft caps
   ledger.py dashboard [--days 14]               spend by provider by day
@@ -23,6 +24,14 @@ Cost fields (true-cost accounting):
                     provider's track record
   --redo-cost-usd   what redoing the task cost after an absorb/fail, when
                     known (e.g. a replacement worker's cost). Optional.
+  --self-cost-usd   estimated cost had the supervisor done the task itself
+                    (standard estimate: the worker's reported token usage
+                    priced at the supervisor's own model rates). Enables
+                    realized-savings reporting: summary books
+                    self_cost - true cost for accepted/remediated work and
+                    books misroute spend as negative savings. Only meaningful
+                    for accepted/remediated — an absorbed/failed task was paid
+                    for in-session anyway, so there is no counterfactual gain.
 
 Task types (free-form, but keep them consistent): implement, tests, refactor,
 migration, lint-fix, docs, boilerplate, review, other.
@@ -78,6 +87,25 @@ def fnum(v):
     return isinstance(v, (int, float))
 
 
+def row_savings(r):
+    """Realized savings vs the supervisor doing the task in-session.
+
+    accepted/remediated: self-cost estimate minus worker true cost (cost+redo).
+    absorbed/failed: the supervisor paid its own cost anyway, so everything
+    spent on the dispatch is negative savings. Returns None when the entry
+    carries no figure to estimate from.
+    """
+    cost = r["cost_usd"] if fnum(r.get("cost_usd")) else 0.0
+    redo = r["redo_cost_usd"] if fnum(r.get("redo_cost_usd")) else 0.0
+    if r.get("outcome") in ("accepted", "remediated"):
+        if not fnum(r.get("self_cost_usd")):
+            return None
+        return r["self_cost_usd"] - cost - redo
+    if not (fnum(r.get("cost_usd")) or fnum(r.get("redo_cost_usd"))):
+        return None
+    return -(cost + redo)
+
+
 def cmd_append(args):
     if args.outcome not in OUTCOMES:
         print(f"ERROR: outcome must be one of {sorted(OUTCOMES)}", file=sys.stderr)
@@ -89,7 +117,8 @@ def cmd_append(args):
         "task_type": args.task_type,
         "outcome": args.outcome,
     }
-    for k in ("task_id", "cost_usd", "redo_cost_usd", "tokens", "wall_seconds", "notes"):
+    for k in ("task_id", "cost_usd", "redo_cost_usd", "self_cost_usd",
+              "tokens", "wall_seconds", "notes"):
         v = getattr(args, k)
         if v is not None:
             entry[k] = v
@@ -103,6 +132,10 @@ def cmd_append(args):
         print("NOTE no --cost-usd recorded for this wasted dispatch. If the worker "
               "reported cost or tokens, log it — wasted spend must count against "
               "the provider's true cost.")
+    if args.outcome in ("accepted", "remediated") and args.self_cost_usd is None:
+        print("NOTE no --self-cost-usd recorded. Estimate what this task would "
+              "have cost done in-session (worker tokens priced at your own "
+              "model rates) so summary can report realized savings.")
     return 0
 
 
@@ -144,6 +177,9 @@ def cmd_summary(args):
         if wasted or redos:
             line += (f" WASTED=${sum(wasted) + sum(redos):.4f} "
                      f"({counts['absorbed'] + counts['failed']} misroutes)")
+        saved = [s for s in (row_savings(r) for r in items) if s is not None]
+        if saved:
+            line += f" SAVED=${sum(saved):.4f} ({len(saved)}/{n} est.)"
         if walls:
             line += f" avg_wall={sum(walls) / len(walls):.0f}s"
         print(line)
@@ -155,6 +191,12 @@ def cmd_summary(args):
                 by_type[t][0] += 1
         for t, (tok, tn) in sorted(by_type.items()):
             print(f"  {t}: {tok}/{tn} ok")
+    all_saved = [s for s in (row_savings(r) for r in rows) if s is not None]
+    if all_saved:
+        print(f"\nREALIZED SAVINGS ${sum(all_saved):.4f} "
+              f"({len(all_saved)}/{len(rows)} entries with estimates) — "
+              f"est. self-cost minus worker true cost; misroute spend counts "
+              f"negative. Entries logged without --self-cost-usd are excluded.")
     return 0
 
 
@@ -234,10 +276,12 @@ def cmd_dashboard(args):
     for day in sorted(by_day):
         parts = [f"{p}: {n} (${c:.4f})" for p, (n, c) in sorted(by_day[day].items())]
         print(f"{day}  " + "  ".join(parts))
+    saved = [s for s in (row_savings(r) for r in rows) if s is not None]
     print(f"\nTOTAL worker spend ${total_cost:.4f}"
           f" | wasted on misroutes ${wasted + total_redo:.4f}"
           f" ({misroutes} tasks{', incl redo $%.4f' % total_redo if total_redo else ''})"
-          f" | true cost ${total_cost + total_redo:.4f}")
+          f" | true cost ${total_cost + total_redo:.4f}"
+          + (f" | realized savings ${sum(saved):.4f} ({len(saved)} est.)" if saved else ""))
     print("Flat-rate/subscription dispatches show $0 — their budget signal is the "
           "PACING view (ledger.py usage), not dollars.")
     return 0
@@ -255,6 +299,7 @@ def main():
     a.add_argument("--task-id", default=None)
     a.add_argument("--cost-usd", type=float, default=None)
     a.add_argument("--redo-cost-usd", type=float, default=None)
+    a.add_argument("--self-cost-usd", type=float, default=None)
     a.add_argument("--tokens", type=int, default=None)
     a.add_argument("--wall-seconds", type=int, default=None)
     a.add_argument("--notes", default=None)
