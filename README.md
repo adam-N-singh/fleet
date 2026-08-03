@@ -98,7 +98,11 @@ flat-rate subscriptions, so the per-token rung was never touched.
   a self-cost estimate (what it would have cost done in-session), and
   `ledger.py summary` reports **realized savings** — per provider and
   fleet-wide, with misroute spend counted against it — so the core
-  cost-reduction claim is measured, not assumed. A `review_after` date field
+  cost-reduction claim is measured, not assumed. Where the harness records
+  session usage on disk (Claude Code, Codex), `self_usage.py` measures the
+  supervisor's *actual* token burn — snapshot before a span of work, delta
+  after — turning self-cost baselines and dispatch overhead into measured
+  numbers instead of estimates. A `review_after` date field
   flags providers whose access terms are scheduled to change.
 - **Cascade fallback.** A rate-limited provider gets an automatic cooldown and
   the brief re-routes to the next capable provider; Claude absorbs the task
@@ -389,6 +393,7 @@ fleet/
 │   ├── test_registry.py         resolution order, get/list/validate contract
 │   ├── test_parse_events.py     every adapter output format vs documented shapes
 │   ├── test_ledger.py           outcomes, pacing vs soft caps, true-cost math
+│   ├── test_self_usage.py       transcript summing, pricing, snapshot/delta
 │   ├── test_dispatch.sh         dispatch/status/cooldown/concurrency vs stub CLIs
 │   └── stubs/{codex, copilot}   fake CLIs emitting documented output
 └── skills/fleet-delegation/
@@ -401,6 +406,7 @@ fleet/
         ├── registry.py              providers.json reader
         ├── parse_events.py          per-CLI output parsing (JSONL, NDJSON, object, text)
         ├── ledger.py                outcome tracking + summaries
+        ├── self_usage.py            supervisor's own measured session usage
         └── adapters/{codex, antigravity, gemini, opencode, claude,
                       grok, cursor, copilot, qwen, droid, amp}.sh
 ```

@@ -173,6 +173,10 @@ def main():
                     for k in ("input_per_mtok", "output_per_mtok")):
                 problems.append("supervisor block needs numeric input_per_mtok and "
                                 "output_per_mtok (researched rates, not guesses)")
+            else:
+                for k in ("cache_read_per_mtok", "cache_write_per_mtok"):
+                    if k in sup and not isinstance(sup[k], (int, float)):
+                        problems.append(f"supervisor.{k} must be numeric when present")
         if problems:
             for p in problems:
                 print(f"PROBLEM {p}")

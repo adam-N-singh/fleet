@@ -128,7 +128,9 @@ expected diff/output volume for output) and price them with the registry's
 researched `per_mtok` rates — never rates from memory. Compare against the
 same tokens at the registry's `supervisor` rates (your own model's researched
 price): that spread is the expected saving, and it is also your
-`--self-cost-usd` baseline at ledger time. If the spread is thin or negative,
+`--self-cost-usd` baseline at ledger time. When you have measured
+self-usage baselines for this task type (see Step 6), prefer them over the
+token-parity assumption. If the spread is thin or negative,
 the dispatch overhead decides — keep the task. Flat-rate providers skip the
 arithmetic: their marginal cost is zero, which is why the cascade burns them
 first.
@@ -254,6 +256,25 @@ proves (or disproves) that delegation is paying for itself; surface it to the
 user when reporting costs. Misroute spend counts as negative savings
 automatically, so never log self-cost for absorbed/failed tasks — you paid
 the in-session cost anyway, there is no counterfactual gain.
+
+**Measure, don't just estimate, where the harness allows.** Your own
+session's token usage is already on disk, and `<scripts>/self_usage.py`
+reads and prices it (Claude Code and Codex transcripts; exits 1 on other
+harnesses — stick with the parity estimate there). Two measurements sharpen
+the savings math:
+
+- **Absorbed-task baselines.** Before doing a substantial task yourself,
+  `python3 <scripts>/self_usage.py snapshot`; when done,
+  `python3 <scripts>/self_usage.py delta`. The priced delta is what that task
+  actually cost in-session — record it in the ledger entry's `--notes`
+  (`"measured self-cost $X"`) and prefer accumulated measurements for the
+  task type over the parity assumption when estimating future
+  `--self-cost-usd`.
+- **Dispatch overhead.** Snapshot when you start writing a brief, delta after
+  acceptance: that is the real supervision cost (brief, polling, diff review)
+  a delegation must clear before it saves anything. If measured overhead
+  rivals the estimated spread, Step 1 should have kept the task —
+  recalibrate your "substantial" threshold accordingly.
 
 ## Failure handling
 

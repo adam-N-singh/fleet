@@ -39,6 +39,8 @@ realized-savings figures from guesses into estimates:
   "model": "<the model the supervisor session runs on>",
   "input_per_mtok": 0.0,
   "output_per_mtok": 0.0,
+  "cache_read_per_mtok": 0.0,
+  "cache_write_per_mtok": 0.0,
   "notes": "pricing verified YYYY-MM"
 }
 ```
@@ -50,6 +52,12 @@ be researched (web search), never written from memory, and date-stamped in
 `notes`. If the supervisor runs on a flat-rate plan, record the API list price
 for the same model anyway: it is the honest market value of the tokens
 delegation avoids consuming from the plan's quota.
+
+The cache rates are optional but matter for measured self-usage
+(`self_usage.py`): session transcripts are dominated by cache reads, which
+cost ~10x less than fresh input — pricing them at the input rate would wildly
+overstate self-cost. When absent, `self_usage.py` assumes read = input/10 and
+write = input*1.25 and says so in its output.
 
 ### One adapter, many providers
 

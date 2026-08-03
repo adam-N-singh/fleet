@@ -4,7 +4,9 @@
     "model": "",
     "input_per_mtok": 0,
     "output_per_mtok": 0,
-    "notes": "PLACEHOLDER \u2014 research the supervisor model's current API list price (web search, never memory) and date-stamp it, e.g. 'pricing verified 2026-08'. On a flat-rate plan, use the API list price for the same model \u2014 the market value of quota that delegation preserves."
+    "cache_read_per_mtok": 0,
+    "cache_write_per_mtok": 0,
+    "notes": "PLACEHOLDER \u2014 research the supervisor model's current API list price (web search, never memory) and date-stamp it, e.g. 'pricing verified 2026-08'. On a flat-rate plan, use the API list price for the same model \u2014 the market value of quota that delegation preserves. Cache rates are optional (self_usage.py assumes read=input/10, write=input*1.25 when absent) but keep measured self-usage honest: transcripts are dominated by cheap cache reads."
   },
   "providers": {
     "codex": {
